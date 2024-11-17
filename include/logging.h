@@ -10,6 +10,7 @@
 #define LOG_DEBUG "DEBUG"
 #define LOG_WARN "WARN"
 #define LOG_ERROR "ERROR"
+#define LOG_CRITICAL "CRITICAL"
 
 // Shared logging function
 void log_message(const char *level, const char *process, const char *format,
