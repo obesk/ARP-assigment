@@ -7,17 +7,20 @@ BUILD_DIR = build
 # Executables
 SPAWNER = $(BIN_DIR)/spawner
 BLACKBOARD = $(BIN_DIR)/blackboard
+DRONE = $(BIN_DIR)/drone
 
 # Source files for each executable
 SPAWNER_SRC = src/spawner.c
 BLACKBOARD_SRC = src/blackboard.c
+DRONE_SRC = src/drone.c
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SPAWNER_SRC))
 BLACKBOARD_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(BLACKBOARD_SRC))
+DRONE_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(DRONE_SRC))
 
 # Default target
-all: $(SPAWNER) $(BLACKBOARD)
+all: $(SPAWNER) $(BLACKBOARD) $(DRONE)
 
 # Build spawner executable
 $(SPAWNER): $(SPAWNER_OBJ) | $(BIN_DIR)
@@ -26,6 +29,9 @@ $(SPAWNER): $(SPAWNER_OBJ) | $(BIN_DIR)
 # Build blackboard executable
 $(BLACKBOARD): $(BLACKBOARD_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(BLACKBOARD_OBJ)
+
+$(DRONE): $(DRONE_OBJ) | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $(DRONE_OBJ)
 
 # Compile source files into object files
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)

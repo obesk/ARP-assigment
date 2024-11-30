@@ -1,9 +1,8 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
-enum proceses {
-	BLACKBOARD,
-	INPUT,
+enum Processes {
+	DRONE,
 	N_PROCESSES // used to count the number of elements
 };
 
