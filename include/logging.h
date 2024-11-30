@@ -13,6 +13,7 @@
 #define LOG_CRITICAL "CRITICAL"
 
 // Shared logging function
+// FIXME: seconds print
 void log_message(const char *level, const char *process, const char *format,
 				 ...) {
 	FILE *logfile = fopen("simulation.log", "a");
