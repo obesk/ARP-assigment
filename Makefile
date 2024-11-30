@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -Wpedantic
+LDFLAGS = -lm
 
 BIN_DIR = bin
 BUILD_DIR = build
@@ -11,8 +12,8 @@ DRONE = $(BIN_DIR)/drone
 
 # Source files for each executable
 SPAWNER_SRC = src/spawner.c
-BLACKBOARD_SRC = src/blackboard.c
-DRONE_SRC = src/drone.c
+BLACKBOARD_SRC = src/blackboard_process.c
+DRONE_SRC = src/drone_process.c
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SPAWNER_SRC))
@@ -24,14 +25,14 @@ all: $(SPAWNER) $(BLACKBOARD) $(DRONE)
 
 # Build spawner executable
 $(SPAWNER): $(SPAWNER_OBJ) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $(SPAWNER_OBJ)
+	$(CC) $(CFLAGS) -o $@ $(SPAWNER_OBJ) $(LDFLAGS)
 
 # Build blackboard executable
 $(BLACKBOARD): $(BLACKBOARD_OBJ) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $(BLACKBOARD_OBJ)
+	$(CC) $(CFLAGS) -o $@ $(BLACKBOARD_OBJ) $(LDFLAGS)
 
 $(DRONE): $(DRONE_OBJ) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $(DRONE_OBJ)
+	$(CC) $(CFLAGS) -o $@ $(DRONE_OBJ) $(LDFLAGS)
 
 # Compile source files into object files
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)

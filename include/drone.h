@@ -1,15 +1,13 @@
 #ifndef DRONE_H
 #define DRONE_H
 
-enum Coordinates {
-	X,
-	Y,
-};
+#include "point.h"
+
+typedef Point LinearVelocity;
 
 typedef struct {
-	float positions[2];
-	float velocities[2];
-	float forces[2];
+	Point position;
+	LinearVelocity velocity;
 } Drone;
 
 #endif // DRONE_H
