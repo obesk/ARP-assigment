@@ -24,7 +24,7 @@ void log_message(const char *level, const char *process, const char *format,
 
 	const char date_format[] = "%Y-%m-%d %H:%M:%S";
 	time_t now = time(NULL);
-	char timestamp[sizeof(date_format)];
+	char timestamp[20];
 	strftime(timestamp, sizeof(timestamp), date_format, localtime(&now));
 
 	va_list args;
