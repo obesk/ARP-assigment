@@ -19,18 +19,31 @@ int main(int argc, char **argv) {
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
 
-	Message request = {
-		.type = RESPONSE,
+	log_message(LOG_DEBUG, PROCESS_NAME, "read: %d, write: %d", rpfd, wpfd);
+
+	Message position_set = {
+		.type = SET,
+		.sector = DRONE_POSITION,
+		.payload.drone_position =
+			{
+				.x = 10,
+				.y = 20,
+			},
+	};
+
+	messageSet(&position_set, wpfd, rpfd);
+
+	Message position_request = {
+		.type = GET,
 		.sector = DRONE_POSITION,
 	};
 
-	log_message(LOG_DEBUG, PROCESS_NAME, "read: %d, write: %d", rpfd, wpfd);
+	Message response = messageGet(&position_request, wpfd, rpfd);
 
-	sleep(1);
-	log_message(LOG_DEBUG, PROCESS_NAME, "writing message to blackboard");
-	Message response = messageGet(&request, wpfd, rpfd);
-
-	(void)response;
+	log_message(LOG_DEBUG, PROCESS_NAME,
+				"message type: %d, sector %d, x: %f, y: %f", response.type,
+				response.sector, response.payload.drone_position.x,
+				response.payload.drone_position.y);
 
 	close(wpfd);
 	close(rpfd);
