@@ -43,7 +43,9 @@ int main(void) {
 					blackboard_executable);
 
 		// closing all the unused pipe ends
-		closeAllPFDs(&processes_pfds);
+		// FIXME: it may be a good idea to close unused pipes currently this
+		// instruction cause problems, check before uncommenting
+		// closeAllPFDs(&processes_pfds);
 		execv(blackboard_executable, args);
 	}
 
@@ -64,15 +66,17 @@ int main(void) {
 						executables[i]);
 
 			// closing all unused pfds ends
-			closeAllPFDs(&blackboard_pfds);
-			for (int j = 0; j < N_PROCESSES; ++j) {
-				// keeping open only the pfds needed by the process
-				if (i == j) {
-					continue;
-				}
-				close(processes_pfds.read[j]);
-				close(processes_pfds.write[j]);
-			}
+			// FIXME: it may be a good idea to close unused pipes currently this
+			// instruction cause problems, check before uncommenting
+			// closeAllPFDs(&blackboard_pfds);
+			// for (int j = 0; j < N_PROCESSES; ++j) {
+			// 	// keeping open only the pfds needed by the process
+			// 	if (i == j) {
+			// 		continue;
+			// 	}
+			// 	close(processes_pfds.read[j]);
+			// 	close(processes_pfds.write[j]);
+			// }
 			execv(executables[i], args);
 		}
 	}

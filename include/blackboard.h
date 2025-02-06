@@ -79,8 +79,11 @@ Message messageRead(const int pfd) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"read_message: Error reading from pipe");
 		return error_msg;
-	} else if (bytes_read != sizeof(Message)) {
-		fprintf(stderr, "read_message: Partial read detected\n");
+	}
+	if (bytes_read != sizeof(Message)) {
+		log_message(LOG_CRITICAL, PROCESS_NAME,
+					"read_message: Partial read detected, bytes read: %d\n",
+					bytes_read);
 		return error_msg;
 	}
 
@@ -88,6 +91,9 @@ Message messageRead(const int pfd) {
 }
 
 bool messageWrite(const Message *const m, const int wpfd) {
+	log_message(LOG_DEBUG, PROCESS_NAME, "trying to write message to pfd: %d",
+				wpfd);
+
 	ssize_t bytes_written = write(wpfd, m, sizeof(Message));
 
 	if (bytes_written == -1) {
@@ -95,11 +101,12 @@ bool messageWrite(const Message *const m, const int wpfd) {
 					"write_message: Error writing to pipe");
 		return false;
 	}
-
 	if (bytes_written != sizeof(Message)) {
 		fprintf(stderr, "write_message: Partial write detected\n");
 		return false;
 	}
+	log_message(LOG_DEBUG, PROCESS_NAME, "correctly wrote message to pfd: %d",
+				wpfd);
 
 	return true;
 }
@@ -129,58 +136,6 @@ bool messageSet(const Message *const msg, int wpfd, int rpfd) {
 
 	Message response = messageRead(rpfd);
 	return response.type == RESPONSE && response.payload.response == OK;
-}
-
-bool messageManage(const Message *const msg, Blackboard *const b, int wpfd) {
-	Message response;
-	response.sector = msg->sector;
-
-	if (msg->type > SET) {
-		response = error_msg;
-	}
-
-	if (msg->type == GET) {
-		response.type = DATA;
-		switch (response.sector) {
-		case DRONE_POSITION:
-			response.payload.drone_position = b->drone.position;
-			break;
-		case DRONE_VELOCITY:
-			response.payload.drone_velocity = b->drone.velocity;
-			break;
-		case TARGETS:
-			memcpy(response.payload.targets, b->targets,
-				   sizeof(int) * MAX_TARGETS);
-			break;
-		case OBSTACLES:
-			memcpy(response.payload.obstacles, b->obstacles,
-				   sizeof(int) * MAX_TARGETS);
-			break;
-		}
-	}
-
-	if (response.type == SET) {
-		response.type = RESPONSE;
-		response.payload.response = OK;
-
-		switch (response.sector) {
-		case DRONE_POSITION:
-			b->drone.position = response.payload.drone_position;
-			break;
-		case DRONE_VELOCITY:
-			b->drone.velocity = response.payload.drone_velocity;
-			break;
-		case TARGETS:
-			memcpy(b->targets, response.payload.targets,
-				   sizeof(int) * MAX_TARGETS);
-			break;
-		case OBSTACLES:
-			memcpy(b->obstacles, response.payload.obstacles,
-				   sizeof(int) * MAX_TARGETS);
-			break;
-		}
-	}
-	return messageWrite(&response, wpfd);
 }
 
 #endif // BLACKBOARD_H
