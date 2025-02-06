@@ -1,9 +1,14 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
+// blackboard is excluded from this process list since it's treated differently
+// from other processes
 enum Processes {
-	DRONE,
-	N_PROCESSES // used to count the number of elements
+	PROCESS_DRONE,
+	PROCESS_INPUT,
+
+	// THIS NEEDS TO BE THE LAST ELEMENT
+	PROCESS_N, // counts the numbe of processes
 };
 
 #endif // PROCESSES_H

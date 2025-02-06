@@ -9,8 +9,13 @@
 
 int main(void) {
 
-	const char *const executables[N_PROCESSES] = {
-		[DRONE] = "./bin/drone",
+	const char *const executables[PROCESS_N] = {
+		[PROCESS_DRONE] = "./bin/drone",
+		[PROCESS_INPUT] = "./bin/input",
+	};
+
+	const bool spawn_in_konsole[PROCESS_N] = {
+		[PROCESS_INPUT] = true,
 	};
 
 	const char *blackboard_executable = "./bin/blackboard";
@@ -49,9 +54,37 @@ int main(void) {
 		execv(blackboard_executable, args);
 	}
 
-	for (int i = 0; i < N_PROCESSES; ++i) {
-		char **args = PFDsToArgs(processes_pfds.read[i],
-								 processes_pfds.write[i], executables[i]);
+	for (int i = 0; i < PROCESS_N; ++i) {
+
+		// (2 optional for the konsole spawn) + 1 for the program name + 2 for
+		// the pfds + 1 for the NULL required by execv
+		const int n_args = 4 + (2 * spawn_in_konsole[i]);
+
+		char **args = malloc((sizeof(char *) * n_args));
+
+		// FIXME: by passing the already allocated pointer to PFDsToArgs it
+		// should be possible to do the following operations in the function
+		// or just manage the konsole option from it
+		int args_count = 0;
+
+		if (spawn_in_konsole[i]) {
+			args[args_count++] = "/usr/bin/konsole";
+			args[args_count++] = "-e";
+		}
+
+		args[args_count] = malloc(strlen(executables[i]) + 1);
+
+		strcpy(args[args_count++], executables[i]);
+
+		args[args_count] = malloc(INT_STR_LEN);
+		snprintf(args[args_count++], INT_STR_LEN, "%d", processes_pfds.read[i]);
+		args[args_count] = malloc(INT_STR_LEN);
+		snprintf(args[args_count++], INT_STR_LEN, "%d",
+				 processes_pfds.write[i]);
+		args[args_count] = NULL;
+
+		// char **args = PFDsToArgs(processes_pfds.read[i],
+		// 						 processes_pfds.write[i], executables[i]);
 
 		pid_t pid = fork();
 		if (pid < 0) {
@@ -69,7 +102,7 @@ int main(void) {
 			// FIXME: it may be a good idea to close unused pipes currently this
 			// instruction cause problems, check before uncommenting
 			// closeAllPFDs(&blackboard_pfds);
-			// for (int j = 0; j < N_PROCESSES; ++j) {
+			// for (int j = 0; j < PROCESS_N; ++j) {
 			// 	// keeping open only the pfds needed by the process
 			// 	if (i == j) {
 			// 		continue;
@@ -77,7 +110,7 @@ int main(void) {
 			// 	close(processes_pfds.read[j]);
 			// 	close(processes_pfds.write[j]);
 			// }
-			execv(executables[i], args);
+			execv(args[0], args);
 		}
 	}
 }
