@@ -69,39 +69,47 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 	struct Message response;
 	response.sector = msg->sector;
 
-	if (msg->type > SET) {
+	if (msg->type < 0 || msg->type > TYPE_SET) {
 		response = error_msg;
 	}
 
-	if (msg->type == GET) {
-		response.type = DATA;
+	if (msg->type == TYPE_GET) {
+		response.type = TYPE_DATA;
 		switch (msg->sector) {
-		case DRONE:
-			response.payload.drone = b->drone;
+		case SECTOR_DRONE_POSITION:
+			response.payload.drone_position = b->drone.position;
 			break;
-		case TARGETS:
+		case SECTOR_DRONE_FORCE:
+			response.payload.drone_force = b->drone.force;
+			break;
+		case SECTOR_TARGETS:
 			response.payload.targets = b->targets;
 			break;
-		case OBSTACLES:
+		case SECTOR_OBSTACLES:
 			response.payload.obstacles = b->obstacles;
 			break;
+		default:
+			response = error_msg;
 		}
-	}
-
-	if (msg->type == SET) {
-		response.type = RESPONSE;
-		response.payload.ack = OK;
+	} else if (msg->type == TYPE_SET) {
+		response.type = TYPE_RESULT;
+		response.payload.ack = RES_OK;
 
 		switch (msg->sector) {
-		case DRONE:
-			b->drone = msg->payload.drone;
+		case SECTOR_DRONE_POSITION:
+			b->drone.position = msg->payload.drone_position;
 			break;
-		case TARGETS:
-			b->targets = msg->payload.targets;
+		case SECTOR_DRONE_FORCE:
+			b->drone.force = msg->payload.drone_force;
 			break;
-		case OBSTACLES:
+		case SECTOR_TARGETS:
+			b->drone.position = msg->payload.drone_position;
+			break;
+		case SECTOR_OBSTACLES:
 			b->obstacles = msg->payload.obstacles;
 			break;
+		default:
+			response = reject_msg;
 		}
 	}
 	return messageWrite(&response, wpfd);
