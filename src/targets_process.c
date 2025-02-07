@@ -27,14 +27,14 @@ int main(int argc, char **argv) {
 	int wpfd = atoi(argv[2]);
 
 	struct Message get_drone_position = {
-		.type = SET,
+		.type = TYPE_SET,
 		.sector = DRONE_POSITION,
 	};
 
 	while (true) {
 		messageWrite(&get_drone_position, wpfd, rpfd);
 
-		struct Message update_targets = {.type = SET, .sector = TARGETS};
+		struct Message update_targets = {.type = TYPE_SET, .sector = TARGETS};
 
 		for (int i = 0; i < MAX_TARGETS; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
