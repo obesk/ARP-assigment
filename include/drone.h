@@ -1,13 +1,11 @@
 #ifndef DRONE_H
 #define DRONE_H
 
-#include "point.h"
+#include "vec2d.h"
 
-typedef Point LinearVelocity;
-
-typedef struct {
-	Point position;
-	LinearVelocity velocity;
-} Drone;
+struct Drone {
+	struct Vec2D position;
+	struct Vec2D force;
+};
 
 #endif // DRONE_H

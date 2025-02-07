@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
 
-	Message get_drone_position = {
+	struct Message get_drone_position = {
 		.type = SET,
 		.sector = DRONE_POSITION,
 	};
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 	while (true) {
 		messageWrite(&get_drone_position, wpfd, rpfd);
 
-		Message update_targets = {.type = SET, .sector = TARGETS};
+		struct Message update_targets = {.type = SET, .sector = TARGETS};
 
 		for (int i = 0; i < MAX_TARGETS; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the

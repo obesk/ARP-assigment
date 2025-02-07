@@ -6,12 +6,19 @@
 #include "pfds.h"
 #include "stdbool.h"
 
-bool messageManage(const Message *const msg, Blackboard *const b, int wpfd);
+struct Blackboard {
+	struct Drone drone;
+	struct Targets targets;
+	struct Obstacles obstacles;
+};
+
+bool messageManage(const struct Message *const msg, struct Blackboard *const b,
+				   int wpfd);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 
-	Blackboard blackboard;
+	struct Blackboard blackboard;
 
 	const int expected_argc = PROCESS_N * 2 + 1; //+1 for the program name
 
@@ -22,7 +29,7 @@ int main(int argc, char **argv) {
 			expected_argc, argc);
 	}
 
-	PFDs *pfds = argsToPFDs(&argv[1]);
+	struct PFDs *pfds = argsToPFDs(&argv[1]);
 	const int max_fd = getMaxFd(pfds) + 1;
 
 	while (true) {
@@ -49,7 +56,7 @@ int main(int argc, char **argv) {
 			if (FD_ISSET(pfds->read[i], &to_read)) {
 				log_message(LOG_DEBUG, PROCESS_NAME,
 							"Received message from pfid: %d", pfds->read[i]);
-				const Message msg = messageRead(pfds->read[i]);
+				const struct Message msg = messageRead(pfds->read[i]);
 
 				messageManage(&msg, &blackboard, pfds->write[i]);
 			}
@@ -57,8 +64,9 @@ int main(int argc, char **argv) {
 	}
 }
 
-bool messageManage(const Message *const msg, Blackboard *const b, int wpfd) {
-	Message response;
+bool messageManage(const struct Message *const msg, struct Blackboard *const b,
+				   int wpfd) {
+	struct Message response;
 	response.sector = msg->sector;
 
 	if (msg->type > SET) {
@@ -68,40 +76,31 @@ bool messageManage(const Message *const msg, Blackboard *const b, int wpfd) {
 	if (msg->type == GET) {
 		response.type = DATA;
 		switch (msg->sector) {
-		case DRONE_POSITION:
-			response.payload.drone_position = b->drone.position;
-			break;
-		case DRONE_VELOCITY:
-			response.payload.drone_velocity = b->drone.velocity;
+		case DRONE:
+			response.payload.drone = b->drone;
 			break;
 		case TARGETS:
-			memcpy(response.payload.targets, b->targets,
-				   sizeof(int) * MAX_TARGETS);
+			response.payload.targets = b->targets;
 			break;
 		case OBSTACLES:
-			memcpy(response.payload.obstacles, b->obstacles,
-				   sizeof(int) * MAX_TARGETS);
+			response.payload.obstacles = b->obstacles;
 			break;
 		}
 	}
 
 	if (msg->type == SET) {
 		response.type = RESPONSE;
-		response.payload.response = OK;
+		response.payload.ack = OK;
 
 		switch (msg->sector) {
-		case DRONE_POSITION:
-			b->drone.position = msg->payload.drone_position;
-			break;
-		case DRONE_VELOCITY:
-			b->drone.velocity = msg->payload.drone_velocity;
+		case DRONE:
+			b->drone = msg->payload.drone;
 			break;
 		case TARGETS:
-			memcpy(b->targets, msg->payload.targets, sizeof(int) * MAX_TARGETS);
+			b->targets = msg->payload.targets;
 			break;
 		case OBSTACLES:
-			memcpy(b->obstacles, msg->payload.obstacles,
-				   sizeof(int) * MAX_TARGETS);
+			b->obstacles = msg->payload.obstacles;
 			break;
 		}
 	}

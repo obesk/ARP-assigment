@@ -16,15 +16,16 @@
 
 #define INT_STR_LEN 11 // Enough to store INT_MAX (10 digits) + null terminator
 
-typedef struct {
+struct PFDs {
 	int read[PROCESS_N];  // fds to receive data from the processes
 	int write[PROCESS_N]; // fds to send data to the processes
-} PFDs;
+};
 
 // TODO: fixed process name on logs
 // TODO: switch from pointer return to return parameter
 
-bool newPFDs(PFDs *const blackboard_pfds, PFDs *const processes_pfds) {
+bool newPFDs(struct PFDs *const blackboard_pfds,
+			 struct PFDs *const processes_pfds) {
 	if (!blackboard_pfds || !processes_pfds) {
 		return false;
 	}
@@ -33,7 +34,7 @@ bool newPFDs(PFDs *const blackboard_pfds, PFDs *const processes_pfds) {
 	int to_process_pfds[2];
 
 	for (int i = 0; i < PROCESS_N; i++) {
-		// creating the blackboard PFDs to talk to the processes
+		// creating the blackboard struct PFDs to talk to the processes
 		const int res = pipe(to_blackboard_pfds);
 		if (res <= -1) {
 			log_message(LOG_CRITICAL, PROCESS_NAME,
@@ -48,7 +49,7 @@ bool newPFDs(PFDs *const blackboard_pfds, PFDs *const processes_pfds) {
 					"(process): %d ",
 					to_blackboard_pfds[0], to_blackboard_pfds[1]);
 
-		// creating the processes PFDs to talk to the blackboard
+		// creating the processes struct PFDs to talk to the blackboard
 		const int res2 = pipe(to_process_pfds);
 		if (res2 <= -1) {
 			log_message(
@@ -67,7 +68,7 @@ bool newPFDs(PFDs *const blackboard_pfds, PFDs *const processes_pfds) {
 	return true;
 }
 
-void closeAllPFDs(PFDs *const pfds) {
+void closeAllPFDs(struct PFDs *const pfds) {
 	for (int i = 0; i < PROCESS_N; ++i) {
 		close(pfds->read[i]);
 		close(pfds->write[i]);
@@ -75,7 +76,7 @@ void closeAllPFDs(PFDs *const pfds) {
 }
 
 // TODO: find better name for this functions to better distinguish theme
-char **allPFDsToArgs(const PFDs *pfds, const char *program_name) {
+char **allPFDsToArgs(const struct PFDs *pfds, const char *program_name) {
 	const int n_args = (PROCESS_N * 2 + 2);
 
 	// 2 file descriptors per process + prorgram name + NULL (required by execv)
@@ -115,8 +116,8 @@ char **PFDsToArgs(int read_pfd, int write_pfd, const char *program_name) {
 	return args;
 }
 
-PFDs *argsToPFDs(char **argv) {
-	PFDs *pfds = malloc(sizeof(PFDs));
+struct PFDs *argsToPFDs(char **argv) {
+	struct PFDs *pfds = malloc(sizeof(struct PFDs));
 
 	int *p = (int *)pfds;
 	for (int i = 0; i < PROCESS_N * 2; ++i) {
@@ -127,7 +128,7 @@ PFDs *argsToPFDs(char **argv) {
 	return pfds;
 }
 
-int getMaxFd(const PFDs *const pfds) {
+int getMaxFd(const struct PFDs *const pfds) {
 	if (PROCESS_N <= 0) {
 		return -1;
 	}

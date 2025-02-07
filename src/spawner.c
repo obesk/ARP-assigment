@@ -22,13 +22,13 @@ int main(void) {
 
 	log_message(LOG_INFO, PROCESS_NAME, "spawner process starting");
 
-	PFDs blackboard_pfds, processes_pfds;
+	struct PFDs blackboard_pfds, processes_pfds;
 
 	const bool result = newPFDs(&blackboard_pfds, &processes_pfds);
 
 	if (!result) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"Error while initializing PFDs");
+					"Error while initializing struct PFDs");
 		exit(1);
 	}
 

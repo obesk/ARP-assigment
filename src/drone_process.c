@@ -21,29 +21,33 @@ int main(int argc, char **argv) {
 
 	log_message(LOG_DEBUG, PROCESS_NAME, "read: %d, write: %d", rpfd, wpfd);
 
-	Message position_set = {
+	struct Message position_set = {
 		.type = SET,
-		.sector = DRONE_POSITION,
-		.payload.drone_position =
+		.sector = DRONE,
+		.payload.drone =
 			{
-				.x = 10,
-				.y = 20,
+				.position =
+					{
+						.x = 10,
+						.y = 20,
+
+					},
 			},
 	};
 
 	messageSet(&position_set, wpfd, rpfd);
 
-	Message position_request = {
+	struct Message position_request = {
 		.type = GET,
-		.sector = DRONE_POSITION,
+		.sector = DRONE,
 	};
 
-	Message response = messageGet(&position_request, wpfd, rpfd);
+	struct Message response = messageGet(&position_request, wpfd, rpfd);
 
 	log_message(LOG_DEBUG, PROCESS_NAME,
 				"message type: %d, sector %d, x: %f, y: %f", response.type,
-				response.sector, response.payload.drone_position.x,
-				response.payload.drone_position.y);
+				response.sector, response.payload.drone.position.x,
+				response.payload.drone.position.y);
 
 	close(wpfd);
 	close(rpfd);
