@@ -47,19 +47,23 @@ int main(int argc, char **argv) {
 		[DIR_UP] = {.y = -N_FORCE},
 		[DIR_UP_LEFT] =
 			{
-				.y = -N_FORCE * COS_SIN_45,
 				.x = -N_FORCE * COS_SIN_45,
+				.y = -N_FORCE * COS_SIN_45,
 			},
 		[DIR_LEFT] = {.x = -N_FORCE},
 		[DIR_DOWN_LEFT] =
 			{
-				.y = N_FORCE * COS_SIN_45,
 				.x = -N_FORCE * COS_SIN_45,
+				.y = N_FORCE * COS_SIN_45,
 			},
-
 		[DIR_DOWN] = {.y = N_FORCE},
 		[DIR_DOWN_RIGHT] = {.y = N_FORCE * COS_SIN_45},
-
+		[DIR_RIGHT] = {.x = N_FORCE},
+		[DIR_UP_RIGHT] =
+			{
+				.x = N_FORCE * COS_SIN_45,
+				.y = N_FORCE * COS_SIN_45,
+			},
 	};
 
 	WINDOW *btn_wins[DIR_N];
@@ -77,7 +81,10 @@ int main(int argc, char **argv) {
 		memset(btn_highlights, 0, sizeof(bool) * DIR_N);
 
 		if (user_input == 'p') {
-			goto exit;
+			log_message(LOG_WARN, PROCESS_NAME,
+						"used asked to exit with input %c, exiting ....",
+						user_input);
+			break;
 		}
 
 		// these two conditions should be redundant, better safe thand sorry
@@ -105,7 +112,7 @@ int main(int argc, char **argv) {
 			blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
 
 		// in case of error in retrieveing the data (it should not happen)
-		// 0, 0 position is assumed
+		// 0, 0 force is assumed
 		const struct Vec2D curr_force = message_ok(&answer)
 											? answer.payload.drone_force
 											: (struct Vec2D){0};
@@ -113,7 +120,7 @@ int main(int argc, char **argv) {
 		const struct Vec2D applied_force = direction_forces[d];
 
 		const struct Vec2D new_force =
-			d != DIR_STOP ? Vec2D_sum(curr_force, applied_force)
+			d != DIR_STOP ? vec2D_sum(curr_force, applied_force)
 						  : (struct Vec2D){0};
 
 		const union Payload payload = {.drone_force = new_force};
@@ -129,7 +136,8 @@ int main(int argc, char **argv) {
 		usleep(50000); // Slight delay to avoid high CPU usage (50ms)
 	}
 
-exit:
+	close(rpfd);
+	close(wpfd);
 	endwin();
 	return 0;
 }

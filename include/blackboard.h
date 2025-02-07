@@ -16,7 +16,7 @@
 #define PROCESS_NAME "blackboard.h"
 #endif // PROCESS_NAME
 
-#define BOARD_SIZE 10
+#define GEOFENCE 100
 
 // the order here is important, do not change !
 enum MsgType {
@@ -90,7 +90,7 @@ struct Message messageRead(const int pfd) {
 }
 
 bool messageWrite(const struct Message *const m, const int wpfd) {
-	log_message(LOG_DEBUG, PROCESS_NAME, "trying to write message to pfd: %d",
+	log_message(LOG_TRACE, PROCESS_NAME, "trying to write message to pfd: %d",
 				wpfd);
 
 	ssize_t bytes_written = write(wpfd, m, sizeof(struct Message));
@@ -104,7 +104,7 @@ bool messageWrite(const struct Message *const m, const int wpfd) {
 		fprintf(stderr, "write_message: Partial write detected\n");
 		return false;
 	}
-	log_message(LOG_DEBUG, PROCESS_NAME, "correctly wrote message to pfd: %d",
+	log_message(LOG_TRACE, PROCESS_NAME, "correctly wrote message to pfd: %d",
 				wpfd);
 
 	return true;
