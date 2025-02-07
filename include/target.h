@@ -1,8 +1,13 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-#include "point.h"
+#include "vec2d.h"
 
-typedef Point Target;
+#define MAX_TARGETS 9
+
+struct Targets {
+	int n;
+	struct Vec2D targets[MAX_TARGETS];
+};
 
 #endif // TARGET_H

@@ -4,8 +4,8 @@
 #include "drone.h"
 #include "logging.h"
 #include "obstacle.h"
-#include "point.h"
 #include "target.h"
+#include "vec2d.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -16,22 +16,10 @@
 #define PROCESS_NAME "blackboard.h"
 #endif // PROCESS_NAME
 
-// TODO: these values probably needs to be changed to something more tought out
-#define MAX_TARGETS 9
-#define MAX_OBSTACLES 9
-
 #define BOARD_SIZE 10
 
-typedef struct {
-	Drone drone;
-	int num_targets;
-	Target targets[MAX_TARGETS];
-	int num_ostacles;
-	Obstacle obstacles[MAX_OBSTACLES];
-} Blackboard;
-
 // the order here is important, do not change !
-typedef enum {
+enum MsgType {
 	// sent by processes
 	GET,
 	SET,
@@ -39,48 +27,46 @@ typedef enum {
 	// sent by blackboard
 	RESPONSE,
 	DATA,
-} MsgType;
+};
 
-typedef enum {
-	DRONE_POSITION,
-	DRONE_VELOCITY,
+enum MemorySector {
+	DRONE,
 	TARGETS,
 	OBSTACLES,
-} MemorySector;
+};
 
-typedef enum {
+enum ACK {
 	OK,
 	REJ,
 	ERR,
-} Response;
+};
 
-typedef union {
-	Point drone_position;
-	LinearVelocity drone_velocity;
-	Response response;
-	Target targets[MAX_TARGETS];
-	Obstacle obstacles[MAX_OBSTACLES];
-} Payload;
+union Payload {
+	enum ACK ack;
+	struct Drone drone;
+	struct Targets targets;
+	struct Obstacles obstacles;
+};
 
-typedef struct {
-	MsgType type;
-	MemorySector sector;
-	Payload payload;
-} Message;
+struct Message {
+	enum MsgType type;
+	enum MemorySector sector;
+	union Payload payload;
+};
 
-static const Message error_msg = {.type = RESPONSE, .payload.response = ERR};
+static const struct Message error_msg = {.type = RESPONSE, .payload.ack = ERR};
 
-Message messageRead(const int pfd) {
-	Message msg;
+struct Message messageRead(const int pfd) {
+	struct Message msg;
 
-	ssize_t bytes_read = read(pfd, &msg, sizeof(Message));
+	ssize_t bytes_read = read(pfd, &msg, sizeof(struct Message));
 
 	if (bytes_read == -1) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"read_message: Error reading from pipe");
 		return error_msg;
 	}
-	if (bytes_read != sizeof(Message)) {
+	if (bytes_read != sizeof(struct Message)) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"read_message: Partial read detected, bytes read: %d\n",
 					bytes_read);
@@ -90,18 +76,18 @@ Message messageRead(const int pfd) {
 	return msg;
 }
 
-bool messageWrite(const Message *const m, const int wpfd) {
+bool messageWrite(const struct Message *const m, const int wpfd) {
 	log_message(LOG_DEBUG, PROCESS_NAME, "trying to write message to pfd: %d",
 				wpfd);
 
-	ssize_t bytes_written = write(wpfd, m, sizeof(Message));
+	ssize_t bytes_written = write(wpfd, m, sizeof(struct Message));
 
 	if (bytes_written == -1) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"write_message: Error writing to pipe");
 		return false;
 	}
-	if (bytes_written != sizeof(Message)) {
+	if (bytes_written != sizeof(struct Message)) {
 		fprintf(stderr, "write_message: Partial write detected\n");
 		return false;
 	}
@@ -111,7 +97,8 @@ bool messageWrite(const Message *const m, const int wpfd) {
 	return true;
 }
 
-Message messageGet(const Message *const msg, const int wpfd, const int rpfd) {
+struct Message messageGet(const struct Message *const msg, const int wpfd,
+						  const int rpfd) {
 	if (msg->type != GET) {
 		return error_msg;
 	}
@@ -124,7 +111,7 @@ Message messageGet(const Message *const msg, const int wpfd, const int rpfd) {
 	return messageRead(rpfd);
 }
 
-bool messageSet(const Message *const msg, int wpfd, int rpfd) {
+bool messageSet(const struct Message *const msg, int wpfd, int rpfd) {
 	if (msg->type != SET) {
 		return false;
 	}
@@ -134,8 +121,8 @@ bool messageSet(const Message *const msg, int wpfd, int rpfd) {
 		return false;
 	}
 
-	Message response = messageRead(rpfd);
-	return response.type == RESPONSE && response.payload.response == OK;
+	struct Message response = messageRead(rpfd);
+	return response.type == RESPONSE && response.payload.ack == OK;
 }
 
 #endif // BLACKBOARD_H
