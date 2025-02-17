@@ -9,8 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#define N_FORCE 1
-// defined to avoid reusing cos / sin multiple times
+#define N_FORCE 100
+// defined to avoid calling cos / sin multiple times
 #define COS_SIN_45 0.7071067
 
 #define BTN_COL_DIST 11
@@ -20,8 +20,10 @@
 #define BTN_WIDTH 5
 #define BTN_HEIGHT 5
 
-void init_screen(void);
+#define PERIOD 10000
+#define US_TO_S 0.000001
 
+void init_screen(void);
 void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int row, int col);
 void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]);
 
@@ -41,8 +43,8 @@ int main(int argc, char **argv) {
 
 	keys_direction_init();
 
-	// this array translates the input direction to  orces applied to the drone
-	// stop not presetn on purpose
+	// this array translates the input direction to forces applied to the drone
+	// stop is not hrere on purpose
 	const struct Vec2D direction_forces[DIR_N] = {
 		[DIR_UP] = {.y = -N_FORCE},
 		[DIR_UP_LEFT] =
@@ -57,12 +59,16 @@ int main(int argc, char **argv) {
 				.y = N_FORCE * COS_SIN_45,
 			},
 		[DIR_DOWN] = {.y = N_FORCE},
-		[DIR_DOWN_RIGHT] = {.y = N_FORCE * COS_SIN_45},
+		[DIR_DOWN_RIGHT] =
+			{
+				.x = N_FORCE * COS_SIN_45,
+				.y = N_FORCE * COS_SIN_45,
+			},
 		[DIR_RIGHT] = {.x = N_FORCE},
 		[DIR_UP_RIGHT] =
 			{
 				.x = N_FORCE * COS_SIN_45,
-				.y = N_FORCE * COS_SIN_45,
+				.y = -N_FORCE * COS_SIN_45,
 			},
 	};
 
@@ -96,13 +102,15 @@ int main(int argc, char **argv) {
 
 		// checking user inputted a key corresponding with a valid direction
 		if ((int)d < 0) {
-			goto draw;
 			log_message(LOG_WARN, PROCESS_NAME,
 						"Invalid direction inputted, key: %c, direction %d",
 						user_input, d);
+			goto draw;
 		}
 
 		btn_highlights[d] = true;
+
+		const struct Vec2D applied_force = direction_forces[d];
 
 		log_message(LOG_INFO, PROCESS_NAME,
 					"user inputted: %c, corresponding direction: %d",
@@ -116,8 +124,6 @@ int main(int argc, char **argv) {
 		const struct Vec2D curr_force = message_ok(&answer)
 											? answer.payload.drone_force
 											: (struct Vec2D){0};
-
-		const struct Vec2D applied_force = direction_forces[d];
 
 		const struct Vec2D new_force =
 			d != DIR_STOP ? vec2D_sum(curr_force, applied_force)
@@ -133,13 +139,29 @@ int main(int argc, char **argv) {
 		refresh();
 
 		// TODO: here it would be better to define a period for every task
-		usleep(50000); // Slight delay to avoid high CPU usage (50ms)
+		usleep(PERIOD); // Slight delay to avoid high CPU usage (50ms)
 	}
 
 	close(rpfd);
 	close(wpfd);
 	endwin();
 	return 0;
+}
+
+void init_screen(void) {
+	initscr(); // Start curses mode
+	printw("Input window");
+	cbreak();			  // Disable line buffering
+	keypad(stdscr, TRUE); // Enable special keys
+	noecho();			  // Disable echo of input characters
+	curs_set(0);		  // Hide cursor
+	nodelay(stdscr, TRUE);
+
+	if (has_colors()) {
+		start_color();
+		init_pair(1, COLOR_BLACK, COLOR_WHITE); // Define COLOR_PAIR(1)
+	}
+	curs_set(0); // Hide cursor
 }
 
 void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int start_row,
@@ -170,20 +192,4 @@ void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]) {
 		}
 		wrefresh(btn_wins[i]);
 	}
-}
-
-void init_screen(void) {
-	initscr(); // Start curses mode
-	printw("Main window");
-	cbreak();			  // Disable line buffering
-	keypad(stdscr, TRUE); // Enable special keys
-	noecho();			  // Disable echo of input characters
-	curs_set(0);		  // Hide cursor
-	nodelay(stdscr, TRUE);
-
-	if (has_colors()) {
-		start_color();
-		init_pair(1, COLOR_BLACK, COLOR_WHITE); // Define COLOR_PAIR(1)
-	}
-	curs_set(0); // Hide cursor
 }
