@@ -6,7 +6,7 @@
 #define DRONE_MASS 1.0
 #define VISCOUS_COEFF 1.0
 
-#define PERIOD 50000
+#define PERIOD 100
 #define US_TO_S 0.000001
 
 #include <unistd.h>
@@ -77,19 +77,21 @@ int main(int argc, char **argv) {
 		// and to deal with boundaries
 		// TODO: obstacle, target and boerder force missing
 		struct Vec2D new_position = {
-			.x = 2 * DRONE_MASS * old_positions[0].x -
-				 DRONE_MASS * old_positions[1].x +
-				 VISCOUS_COEFF * (old_time_passed * US_TO_S) *
-					 old_positions[0].x +
-				 (old_time_passed * US_TO_S) * (time_passed * US_TO_S) *
-					 curr_force.x,
+			.x = (2 * DRONE_MASS * old_positions[0].x -
+				  DRONE_MASS * old_positions[1].x +
+				  VISCOUS_COEFF * (old_time_passed * US_TO_S) *
+					  old_positions[0].x +
+				  (old_time_passed * US_TO_S) * (time_passed * US_TO_S) *
+					  curr_force.x) /
+				 (DRONE_MASS + VISCOUS_COEFF * (old_time_passed * US_TO_S)),
 
-			.y = 2 * DRONE_MASS * old_positions[0].y -
-				 DRONE_MASS * old_positions[1].y +
-				 VISCOUS_COEFF * (old_time_passed * US_TO_S) *
-					 old_positions[0].y +
-				 (old_time_passed * US_TO_S) * (time_passed * US_TO_S) *
-					 curr_force.y,
+			.y = (2 * DRONE_MASS * old_positions[0].y -
+				  DRONE_MASS * old_positions[1].y +
+				  VISCOUS_COEFF * (old_time_passed * US_TO_S) *
+					  old_positions[0].y +
+				  (old_time_passed * US_TO_S) * (time_passed * US_TO_S) *
+					  curr_force.y) /
+				 (DRONE_MASS + VISCOUS_COEFF * (old_time_passed * US_TO_S)),
 		};
 
 		union Payload payload = {.drone_position = new_position};
