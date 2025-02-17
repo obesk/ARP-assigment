@@ -12,10 +12,12 @@ int main(void) {
 	const char *const executables[PROCESS_N] = {
 		[PROCESS_DRONE] = "./bin/drone",
 		[PROCESS_INPUT] = "./bin/input",
+		[PROCESS_MAP] = "./bin/map",
 	};
 
 	const bool spawn_in_konsole[PROCESS_N] = {
 		[PROCESS_INPUT] = true,
+		[PROCESS_MAP] = true,
 	};
 
 	const char *blackboard_executable = "./bin/blackboard";
