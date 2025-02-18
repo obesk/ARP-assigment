@@ -11,6 +11,7 @@ BLACKBOARD = $(BIN_DIR)/blackboard
 DRONE = $(BIN_DIR)/drone
 INPUT = $(BIN_DIR)/input
 MAP = $(BIN_DIR)/map
+TARGETS = $(BIN_DIR)/targets
 
 # Source files for each executable
 SPAWNER_SRC = src/spawner.c
@@ -18,6 +19,7 @@ BLACKBOARD_SRC = src/blackboard_process.c
 DRONE_SRC = src/drone_process.c
 INPUT_SRC = src/input_process.c
 MAP_SRC = src/map_process.c
+TARGETS_SRC = src/targets_process.c
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SPAWNER_SRC))
@@ -25,9 +27,11 @@ BLACKBOARD_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(BLACKBOARD_SRC))
 DRONE_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(DRONE_SRC))
 INPUT_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(INPUT_SRC))
 MAP_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(MAP_SRC))
+TARGETS_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(TARGETS_SRC))
+
 
 # Default target
-all: $(SPAWNER) $(BLACKBOARD) $(DRONE) $(INPUT) $(MAP)
+all: $(SPAWNER) $(BLACKBOARD) $(DRONE) $(INPUT) $(MAP) $(TARGETS)
 
 # Build spawner executable
 $(SPAWNER): $(SPAWNER_OBJ) | $(BIN_DIR)
@@ -43,9 +47,11 @@ $(DRONE): $(DRONE_OBJ) | $(BIN_DIR)
 $(INPUT): $(INPUT_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(INPUT_OBJ) $(LDFLAGS)
 
-# Build spawner executable
 $(MAP): $(MAP_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(MAP_OBJ) $(LDFLAGS)
+
+$(TARGETS): $(TARGETS_OBJ) | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $(TARGETS_OBJ) $(LDFLAGS)
 
 # Compile source files into object files
 $(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)

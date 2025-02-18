@@ -7,6 +7,7 @@ enum Processes {
 	PROCESS_DRONE,
 	PROCESS_INPUT,
 	PROCESS_MAP,
+	PROCESS_TARGETS,
 
 	// THIS NEEDS TO BE THE LAST ELEMENT
 	PROCESS_N, // counts the numbe of processes
