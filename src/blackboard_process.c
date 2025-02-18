@@ -103,7 +103,7 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			b->drone.force = msg->payload.drone_force;
 			break;
 		case SECTOR_TARGETS:
-			b->drone.position = msg->payload.drone_position;
+			b->targets = msg->payload.targets;
 			break;
 		case SECTOR_OBSTACLES:
 			b->obstacles = msg->payload.obstacles;

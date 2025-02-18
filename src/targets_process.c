@@ -11,9 +11,11 @@
 
 #define SLEEP_TIME_US 100000
 
+#define PERIOD 100000
+
 int main(int argc, char **argv) {
 	srand(time(NULL));
-	log_message(LOG_INFO, PROCESS_NAME, "Drone running");
+	log_message(LOG_INFO, PROCESS_NAME, "Targets running");
 
 	if (argc != 3) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
@@ -26,25 +28,25 @@ int main(int argc, char **argv) {
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
 
-	struct Message get_drone_position = {
-		.type = TYPE_SET,
-		.sector = DRONE_POSITION,
-	};
+	// struct Message get_drone_position = {
+	// 	.type = TYPE_SET,
+	// 	.sector = DRONE_POSITION,
+	// };
 
 	while (true) {
-		messageWrite(&get_drone_position, wpfd, rpfd);
+		// messageWrite(&get_drone_position, wpfd, rpfd);
 
-		struct Message update_targets = {.type = TYPE_SET, .sector = TARGETS};
+		union Payload payload;
 
 		for (int i = 0; i < MAX_TARGETS; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
-			update_targets.payload.targets[i] = pointRandom(0, BOARD_SIZE);
+			payload.targets.targets[i] = vec2D_random(0, GEOFENCE);
 		}
 
-		messageSet(&update_targets, wpfd, rpfd);
+		blackboard_set(SECTOR_TARGETS, &payload, wpfd, rpfd);
 
-		usleep(SLEEP_TIME_US);
+		usleep(PERIOD);
 	}
 	close(rpfd);
 	close(wpfd);

@@ -17,7 +17,7 @@ enum LogLevels {
 	LOG_N,
 };
 
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_INFO
 
 static const char *LEVEL_NAME[LOG_N] = {
 	[LOG_TRACE] = "TRACE", [LOG_DEBUG] = "DEBUG", [LOG_INFO] = "INFO",
@@ -25,7 +25,6 @@ static const char *LEVEL_NAME[LOG_N] = {
 };
 
 // Shared logging function
-// FIXME: seconds print
 void log_message(enum LogLevels level, const char *process, const char *format,
 				 ...) {
 	if (level < LOG_LEVEL) {

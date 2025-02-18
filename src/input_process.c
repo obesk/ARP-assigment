@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define N_FORCE 100
+#define N_FORCE 10
 // defined to avoid calling cos / sin multiple times
 #define COS_SIN_45 0.7071067
 
