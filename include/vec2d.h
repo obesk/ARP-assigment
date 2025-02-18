@@ -23,8 +23,8 @@ double vec2D_distance(const struct Vec2D v1, const struct Vec2D v2) {
 
 struct Vec2D vec2D_random(const int min, const int max) {
 	return (struct Vec2D){
-		.x = rand() / (max - min) + min,
-		.y = rand() / (max - min) + min,
+		.x = rand() % (max - min) + min,
+		.y = rand() % (max - min) + min,
 	};
 }
 
