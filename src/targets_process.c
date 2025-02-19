@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define PERIOD 10000000
+#define PERIOD 1000
 
 int main(int argc, char **argv) {
 	srand(time(NULL));
@@ -26,26 +26,32 @@ int main(int argc, char **argv) {
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
 
-	// struct Message get_drone_position = {
-	// 	.type = TYPE_SET,
-	// 	.sector = DRONE_POSITION,
-	// };
-
 	while (true) {
-		// messageWrite(&get_drone_position, wpfd, rpfd);
-		union Payload payload;
+		// checking the state of the targets to see if they need to be updated
+		const struct Message targets_answer =
+			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
 
+		const struct Targets targets = message_ok(&targets_answer)
+										   ? targets_answer.payload.targets
+										   : (struct Targets){0};
+
+		if (targets.n > 0) {
+			continue;
+		}
+
+		struct Targets new_targets;
 		for (int i = 0; i < MAX_TARGETS; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
-			payload.targets.targets[i] = vec2D_random(0, GEOFENCE);
-			log_message(
-				LOG_INFO, PROCESS_NAME, "generated target with x: %d, y %d",
-				payload.targets.targets[i].x, payload.targets.targets[i].y);
+			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
+			log_message(LOG_INFO, PROCESS_NAME,
+						"generated target with x: %d, y %d",
+						new_targets.targets[i].x, new_targets.targets[i].y);
 		}
 
-		payload.targets.n = MAX_TARGETS;
-		blackboard_set(SECTOR_TARGETS, &payload, wpfd, rpfd);
+		new_targets.n = MAX_TARGETS;
+		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
+					   wpfd, rpfd);
 		usleep(PERIOD);
 	}
 	close(rpfd);

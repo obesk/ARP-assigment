@@ -14,7 +14,7 @@
 
 #define MAX_OBSTACLE_DISTANCE 5.0
 #define MAX_TARGET_DISTANCE 5.0
-#define TARGET_CAUGHT_DISTANCE 0.1
+#define TARGET_CAUGHT_DISTANCE 1
 
 // TODO: this needs to be decreased probably
 #define TARGET_ATTRACTION_COEFF 50.0
@@ -133,9 +133,9 @@ int main(int argc, char **argv) {
 		if (targets.n &&
 			vec2D_distance(drone_position, targets.targets[targets.n - 1]) <
 				TARGET_CAUGHT_DISTANCE) {
-			struct Targets new_targets = {.n = targets.n - 1};
-			memcpy(new_targets.targets, &(targets.targets[1]),
-				   sizeof(struct Targets) * new_targets.n);
+			log_message(LOG_INFO, PROCESS_NAME, "user caught target");
+			struct Targets new_targets = targets;
+			new_targets.n = targets.n - 1;
 			blackboard_set(SECTOR_TARGETS,
 						   &(union Payload){.targets = new_targets}, wpfd,
 						   rpfd);
