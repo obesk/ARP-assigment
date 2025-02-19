@@ -1,3 +1,4 @@
+
 #include <unistd.h>
 #define PROCESS_NAME "TARGETS"
 
@@ -9,13 +10,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define PERIOD 1000
+#define PERIOD 10000000
 
 int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
 	// time to have the same seed
 	srand(time(NULL) ^ getpid());
-	log_message(LOG_INFO, PROCESS_NAME, "Targets running");
+	log_message(LOG_INFO, PROCESS_NAME, "Obstacles running");
 
 	if (argc != 3) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
@@ -29,31 +30,21 @@ int main(int argc, char **argv) {
 	int wpfd = atoi(argv[2]);
 
 	while (true) {
-		// checking the state of the targets to see if they need to be updated
-		const struct Message targets_answer =
-			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
+		// messageWrite(&get_drone_position, wpfd, rpfd);
+		struct Obstacles obstacles;
 
-		const struct Targets targets = message_ok(&targets_answer)
-										   ? targets_answer.payload.targets
-										   : (struct Targets){0};
-
-		if (targets.n > 0) {
-			continue;
-		}
-
-		struct Targets new_targets;
 		for (int i = 0; i < MAX_TARGETS; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
-			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
+			obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
 			log_message(LOG_INFO, PROCESS_NAME,
-						"generated target with x: %f, y %f",
-						new_targets.targets[i].x, new_targets.targets[i].y);
+						"generated obstacle with x: %f, y %f",
+						obstacles.obstacles[i].x, obstacles.obstacles[i].y);
 		}
 
-		new_targets.n = MAX_TARGETS;
-		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
-					   wpfd, rpfd);
+		obstacles.n = MAX_OBSTACLES;
+		blackboard_set(SECTOR_OBSTACLES,
+					   &(union Payload){.obstacles = obstacles}, wpfd, rpfd);
 		usleep(PERIOD);
 	}
 	close(rpfd);

@@ -12,6 +12,7 @@ int main(void) {
 	const char *const executables[PROCESS_N] = {
 		[PROCESS_DRONE] = "./bin/drone",
 		[PROCESS_TARGETS] = "./bin/targets",
+		[PROCESS_OBSTACLES] = "./bin/obstacles",
 		[PROCESS_INPUT] = "./bin/input",
 		[PROCESS_MAP] = "./bin/map",
 	};

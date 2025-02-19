@@ -71,16 +71,27 @@ int main(int argc, char **argv) {
 										   ? targets_answer.payload.targets
 										   : (struct Targets){0};
 
+		const struct Message obstacles_answer =
+			blackboard_get(SECTOR_OBSTACLES, wpfd, rpfd);
+		const struct Obstacles obstacles =
+			message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
+										  : (struct Obstacles){0};
+
 		for (int i = 0; i < targets.n; ++i) {
 			const struct Vec2Dint t =
 				convert_coordinates(border, targets.targets[i]);
-
 			log_message(
 				LOG_INFO, PROCESS_NAME,
 				"target x: %f, target x char: %d, target y : % f, target y "
 				"char : % d ",
 				targets.targets[i].x, t.x, targets.targets[i].y, t.y);
 			mvwprintw(border, t.y, t.x, "%d", targets.n - i);
+		}
+
+		for (int i = 0; i < obstacles.n; ++i) {
+			const struct Vec2Dint t =
+				convert_coordinates(border, obstacles.obstacles[i]);
+			mvwprintw(border, t.y, t.x, "%c", 'o');
 		}
 
 		wrefresh(border);
