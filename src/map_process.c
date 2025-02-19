@@ -66,7 +66,6 @@ int main(int argc, char **argv) {
 
 		const struct Message targets_answer =
 			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
-
 		const struct Targets targets = message_ok(&targets_answer)
 										   ? targets_answer.payload.targets
 										   : (struct Targets){0};
@@ -111,12 +110,12 @@ struct Vec2Dint convert_coordinates(const WINDOW *win, struct Vec2D coord) {
 	int win_width, win_height;
 	getmaxyx(win, win_height, win_width);
 
-	const float w_m_to_char = (float)win_width / GEOFENCE;
-	const float h_m_to_char = (float)win_height / GEOFENCE;
+	const float w_m_to_char = (float)(win_width - 2) / GEOFENCE;
+	const float h_m_to_char = (float)(win_height - 2) / GEOFENCE;
 
 	return (struct Vec2Dint){
-		.x = (int)(coord.x * w_m_to_char),
-		.y = (int)(coord.y * h_m_to_char),
+		.x = (int)(coord.x * w_m_to_char) + 1,
+		.y = (int)(coord.y * h_m_to_char) + 1,
 	};
 }
 
