@@ -8,6 +8,7 @@ enum Processes {
 	PROCESS_INPUT,
 	PROCESS_MAP,
 	PROCESS_TARGETS,
+	PROCESS_OBSTACLES,
 
 	// THIS NEEDS TO BE THE LAST ELEMENT
 	PROCESS_N, // counts the numbe of processes
