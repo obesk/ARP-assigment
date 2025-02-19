@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 				"target x: %f, target x char: %d, target y : % f, target y "
 				"char : % d ",
 				targets.targets[i].x, t.x, targets.targets[i].y, t.y);
-			mvwprintw(border, t.y, t.x, "%c", 'o');
+			mvwprintw(border, t.y, t.x, "%d", targets.n - i);
 		}
 
 		wrefresh(border);
