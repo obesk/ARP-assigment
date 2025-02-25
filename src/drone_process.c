@@ -18,10 +18,15 @@
 
 // TODO: this needs to be decreased probably
 #define TARGET_ATTRACTION_COEFF 50.0
+#define OBSTACLE_REPULSION_COEFF 10.0
 
 struct Vec2D
-calulate_target_attraction_force(const struct Targets targets,
-								 const struct Vec2D drone_position);
+calculate_target_attraction_force(const struct Targets *const targets,
+								  const struct Vec2D drone_position);
+
+struct Vec2D
+calculate_obstacle_repulsion_force(const struct Obstacles *const obstacles,
+								   const struct Vec2D drone_position);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Drone running");
@@ -89,10 +94,21 @@ int main(int argc, char **argv) {
 										   ? targets_answer.payload.targets
 										   : (struct Targets){0};
 
-		const struct Vec2D targets_force =
-			calulate_target_attraction_force(targets, drone_position);
+		const struct Message obstacles_answer =
+			blackboard_get(SECTOR_OBSTACLES, wpfd, rpfd);
 
-		const struct Vec2D curr_force = vec2D_sum(drone_force, targets_force);
+		const struct Obstacles obstacles =
+			message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
+										  : (struct Obstacles){0};
+
+		const struct Vec2D targets_force =
+			calculate_target_attraction_force(&targets, drone_position);
+
+		const struct Vec2D obstacles_force =
+			calculate_obstacle_repulsion_force(&obstacles, drone_position);
+
+		const struct Vec2D curr_force =
+			vec2D_sum(drone_force, vec2D_sum(obstacles_force, targets_force));
 
 		// Latex formula :
 		// x_i = \frac{2M x_{i-1} - M x_{i-2} + K T_{i-1} x_{i-1} + T_{i-1}
@@ -154,13 +170,13 @@ int main(int argc, char **argv) {
 }
 
 struct Vec2D
-calulate_target_attraction_force(const struct Targets targets,
-								 const struct Vec2D drone_position) {
+calculate_target_attraction_force(const struct Targets *const targets,
+								  const struct Vec2D drone_position) {
 	// computing targets attraction force
 	struct Vec2D targets_force = {0};
-	for (int i = 0; i < targets.n; ++i) {
+	for (int i = 0; i < targets->n; ++i) {
 		const double target_drone_distance =
-			vec2D_distance(targets.targets[i], drone_position);
+			vec2D_distance(targets->targets[i], drone_position);
 
 		if (target_drone_distance > MAX_TARGET_DISTANCE) {
 			continue;
@@ -169,7 +185,33 @@ calulate_target_attraction_force(const struct Targets targets,
 		targets_force = vec2D_sum(
 			targets_force,
 			vec2D_scalar_mult(-TARGET_ATTRACTION_COEFF,
-							  vec2D_diff(drone_position, targets.targets[i])));
+							  vec2D_diff(drone_position, targets->targets[i])));
 	}
 	return targets_force;
+}
+
+struct Vec2D
+calculate_obstacle_repulsion_force(const struct Obstacles *const obstacles,
+								   const struct Vec2D drone_position) {
+	struct Vec2D obstacles_force = {0};
+	for (int i = 0; i < obstacles->n; ++i) {
+		const double target_drone_distance =
+			vec2D_distance(obstacles->obstacles[i], drone_position);
+
+		if (target_drone_distance <= MAX_OBSTACLE_DISTANCE) {
+			continue;
+		}
+
+		const struct Vec2D gradient = vec2D_normalize(
+			vec2D_diff(obstacles->obstacles[i], drone_position));
+
+		obstacles_force = vec2D_sum(
+			obstacles_force,
+			vec2D_scalar_mult(
+				OBSTACLE_REPULSION_COEFF *
+					(1 / target_drone_distance - 1 / MAX_OBSTACLE_DISTANCE) /
+					(target_drone_distance * target_drone_distance),
+				gradient));
+	}
+	return obstacles_force;
 }
