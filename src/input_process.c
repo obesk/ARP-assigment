@@ -1,3 +1,6 @@
+#include "processes.h"
+#include "watchdog.h"
+#include <signal.h>
 #define PROCESS_NAME "INPUT"
 
 #include "blackboard.h"
@@ -20,7 +23,7 @@
 #define BTN_WIDTH 5
 #define BTN_HEIGHT 5
 
-#define PERIOD 10000
+#define PERIOD process_periods[PROCESS_INPUT]
 #define US_TO_S 0.000001
 
 void init_screen(void);
@@ -30,7 +33,7 @@ void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]);
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Input running");
 
-	if (argc != 3) {
+	if (argc < 4) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"Incorrect number of arguments, expected: 3, received: %d",
 					argc);
@@ -40,6 +43,7 @@ int main(int argc, char **argv) {
 	// TODO: add error check
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
+	const pid_t watchdog_pid = atoi(argv[3]);
 
 	keys_direction_init();
 
@@ -139,6 +143,7 @@ int main(int argc, char **argv) {
 		refresh();
 
 		// TODO: here it would be better to define a period for every task
+		watchdog_send_hearthbeat(watchdog_pid, PROCESS_INPUT);
 		usleep(PERIOD); // Slight delay to avoid high CPU usage (50ms)
 	}
 
