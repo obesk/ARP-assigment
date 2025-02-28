@@ -2,14 +2,16 @@
 
 #include "blackboard.h"
 #include "logging.h"
+#include "processes.h"
 #include "vec2d.h"
+#include "watchdog.h"
 
 #include <unistd.h>
 
 #define DRONE_MASS 1.0
 #define VISCOUS_COEFF 1.0
 
-#define PERIOD 100
+#define PERIOD process_periods[PROCESS_DRONE]
 #define US_TO_S 0.000001
 
 #define MAX_OBSTACLE_DISTANCE 5.0
@@ -31,7 +33,7 @@ calculate_obstacle_repulsion_force(const struct Obstacles *const obstacles,
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Drone running");
 
-	if (argc != 3) {
+	if (argc < 4) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"Incorrect number of arguments, expected: 3, received: %d",
 					argc);
@@ -41,6 +43,7 @@ int main(int argc, char **argv) {
 	// TODO: add error check
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
+	int whatchdog_pid = atoi(argv[3]);
 
 	struct Vec2D old_drone_positions[2] = {0}; // 0 is the most recent
 	long old_time_passed = PERIOD;			   // time passed between the two
@@ -160,7 +163,8 @@ int main(int argc, char **argv) {
 		old_drone_positions[1] = old_drone_positions[0];
 		old_drone_positions[0] = drone_position;
 
-		// FIXME: a more refined sleep
+		watchdog_send_hearthbeat(whatchdog_pid, PROCESS_DRONE);
+		// FIXME: a more refined sleep wich accounts for execution time
 		usleep(PERIOD);
 	}
 

@@ -1,4 +1,6 @@
+#include "processes.h"
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define PROCESS_NAME "SPAWNER"
@@ -8,13 +10,12 @@
 #include "pfds.h"
 
 int main(void) {
-
 	const char *const executables[PROCESS_N] = {
 		[PROCESS_DRONE] = "./bin/drone",
-		[PROCESS_TARGETS] = "./bin/targets",
-		[PROCESS_OBSTACLES] = "./bin/obstacles",
 		[PROCESS_INPUT] = "./bin/input",
 		[PROCESS_MAP] = "./bin/map",
+		[PROCESS_TARGETS] = "./bin/targets",
+		[PROCESS_OBSTACLES] = "./bin/obstacles",
 	};
 
 	const bool spawn_in_konsole[PROCESS_N] = {
@@ -22,6 +23,7 @@ int main(void) {
 		[PROCESS_MAP] = true,
 	};
 
+	const char *watchdog_executable = "./bin/watchdog";
 	const char *blackboard_executable = "./bin/blackboard";
 
 	log_message(LOG_INFO, PROCESS_NAME, "spawner process starting");
@@ -36,17 +38,34 @@ int main(void) {
 		exit(1);
 	}
 
+	// spawning the watchdog
+	const pid_t watchdog_pid = fork();
+
+	if (watchdog_pid < 0) {
+		log_message(LOG_CRITICAL, PROCESS_NAME,
+					"Error while creating the watchdog process: %s",
+					watchdog_executable);
+		exit(1);
+	}
+	if (watchdog_pid == 0) {
+		log_message(LOG_INFO, PROCESS_NAME,
+					"Created watchdog child process with executable: %s",
+					watchdog_executable);
+		execl(watchdog_executable, watchdog_executable, NULL);
+		return 0;
+	}
+
 	// spawning the blackboard
 	char **args = allPFDsToArgs(&blackboard_pfds, blackboard_executable);
 
-	pid_t pid = fork();
-	if (pid < 0) {
+	const pid_t blackboard_pid = fork();
+	if (blackboard_pid < 0) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"Error while creating blackboard child process: %s",
 					blackboard_executable);
 		exit(1);
 	}
-	if (pid == 0) {
+	if (blackboard_pid == 0) {
 		log_message(LOG_INFO, PROCESS_NAME,
 					"Created blackboard child process with executable: %s",
 					blackboard_executable);
@@ -56,13 +75,15 @@ int main(void) {
 		// instruction cause problems, check before uncommenting
 		// closeAllPFDs(&processes_pfds);
 		execv(blackboard_executable, args);
+		return 0;
 	}
 
+	// spawning processes
 	for (int i = 0; i < PROCESS_N; ++i) {
 
 		// (2 optional for the konsole spawn) + 1 for the program name + 2 for
-		// the pfds + 1 for the NULL required by execv
-		const int n_args = 4 + (2 * spawn_in_konsole[i]);
+		// the pfds +1 for the watchdog pid + 1 for the NULL required by execv
+		const int n_args = 5 + (2 * spawn_in_konsole[i]);
 
 		char **args = malloc((sizeof(char *) * n_args));
 
@@ -80,11 +101,16 @@ int main(void) {
 
 		strcpy(args[args_count++], executables[i]);
 
+		// converting the processes file descriptors and copying them on the
+		// args
 		args[args_count] = malloc(INT_STR_LEN);
 		snprintf(args[args_count++], INT_STR_LEN, "%d", processes_pfds.read[i]);
 		args[args_count] = malloc(INT_STR_LEN);
 		snprintf(args[args_count++], INT_STR_LEN, "%d",
 				 processes_pfds.write[i]);
+		args[args_count] = malloc(INT_STR_LEN);
+		snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
+
 		args[args_count] = NULL;
 
 		// char **args = PFDsToArgs(processes_pfds.read[i],

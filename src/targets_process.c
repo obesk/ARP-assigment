@@ -1,15 +1,17 @@
-#include <unistd.h>
+#include "watchdog.h"
 #define PROCESS_NAME "TARGETS"
 
 #include "blackboard.h"
 #include "logging.h"
+#include "processes.h"
 #include "target.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
-#define PERIOD 1000
+#define PERIOD process_periods[PROCESS_TARGETS]
 
 int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
@@ -17,9 +19,9 @@ int main(int argc, char **argv) {
 	srand(time(NULL) ^ getpid());
 	log_message(LOG_INFO, PROCESS_NAME, "Targets running");
 
-	if (argc != 3) {
+	if (argc < 4) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"Incorrect number of arguments, expected: 3, received: %d",
+					"Incorrect number of arguments, expected: 4, received: %d",
 					argc);
 		exit(1);
 	}
@@ -27,6 +29,7 @@ int main(int argc, char **argv) {
 	// TODO: add error check
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
+	int watchdog_pid = atoi(argv[3]);
 
 	while (true) {
 		// checking the state of the targets to see if they need to be updated
@@ -54,6 +57,8 @@ int main(int argc, char **argv) {
 		new_targets.n = MAX_TARGETS;
 		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
 					   wpfd, rpfd);
+
+		watchdog_send_hearthbeat(watchdog_pid, PROCESS_TARGETS);
 		usleep(PERIOD);
 	}
 	close(rpfd);

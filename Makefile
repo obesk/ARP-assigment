@@ -13,6 +13,7 @@ INPUT = $(BIN_DIR)/input
 MAP = $(BIN_DIR)/map
 TARGETS = $(BIN_DIR)/targets
 OBSTACLES = $(BIN_DIR)/obstacles
+WATCHDOG = $(BIN_DIR)/watchdog
 
 # Source files for each executable
 SPAWNER_SRC = src/spawner.c
@@ -22,6 +23,7 @@ INPUT_SRC = src/input_process.c
 MAP_SRC = src/map_process.c
 TARGETS_SRC = src/targets_process.c
 OBSTACLES_SRC = src/obstacles_process.c
+WATCHDOG_SRC = src/watchdog_process.c
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SPAWNER_SRC))
@@ -31,18 +33,21 @@ INPUT_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(INPUT_SRC))
 MAP_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(MAP_SRC))
 TARGETS_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(TARGETS_SRC))
 OBSTACLES_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(OBSTACLES_SRC))
+WATCHDOG_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(WATCHDOG_SRC))
 
 
 # Default target
-all: $(SPAWNER) $(BLACKBOARD) $(DRONE) $(INPUT) $(MAP) $(TARGETS) $(OBSTACLES)
+all: $(SPAWNER) $(BLACKBOARD) $(DRONE) $(INPUT) $(MAP) $(TARGETS) $(OBSTACLES) $(WATCHDOG)
 
 # Build spawner executable
 $(SPAWNER): $(SPAWNER_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(SPAWNER_OBJ) $(LDFLAGS)
 
-# Build blackboard executable
 $(BLACKBOARD): $(BLACKBOARD_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(BLACKBOARD_OBJ) $(LDFLAGS)
+
+$(WATCHDOG): $(WATCHDOG_OBJ) | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $(WATCHDOG_OBJ) $(LDFLAGS)
 
 $(DRONE): $(DRONE_OBJ) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $(DRONE_OBJ) $(LDFLAGS)
@@ -73,4 +78,8 @@ $(BUILD_DIR):
 # Clean build artifacts
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR) *.log
+
+kill:
+	killall drone; killall blackboard; killall input; killall map; killall spawner; killall targets; killall watchdog
+
 

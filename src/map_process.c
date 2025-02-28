@@ -1,10 +1,14 @@
+#include "watchdog.h"
+#include <signal.h>
 #define PROCESS_NAME "MAP"
+
 #include "blackboard.h"
+#include "processes.h"
 #include "vec2d.h"
 
 #include <ncurses.h>
 
-#define PERIOD 10000
+#define PERIOD process_periods[PROCESS_MAP]
 #define US_TO_S 0.000001
 
 struct Vec2Dint {
@@ -19,9 +23,9 @@ int main(int argc, char **argv) {
 
 	log_message(LOG_INFO, PROCESS_NAME, "Map running");
 
-	if (argc != 3) {
+	if (argc < 4) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"Incorrect number of arguments, expected: 3, received: %d",
+					"Incorrect number of arguments, expected: 4, received: %d",
 					argc);
 
 		exit(1);
@@ -32,6 +36,7 @@ int main(int argc, char **argv) {
 	// TODO: add error check
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
+	const pid_t watchdog_pid = atoi(argv[3]);
 
 	WINDOW *border = newwin(0, 0, 0, 0);
 	while (1) {
@@ -97,6 +102,7 @@ int main(int argc, char **argv) {
 		// mvwprintw(border, 0, 0, "%c", '+');
 		refresh();
 		// TODO: add period
+		watchdog_send_hearthbeat(watchdog_pid, PROCESS_MAP);
 		usleep(PERIOD);
 	}
 
