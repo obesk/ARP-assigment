@@ -3,6 +3,7 @@
 #include "logging.h"
 #include "processes.h"
 #include "stdbool.h"
+#include "time_management.h"
 #include "watchdog.h"
 
 #include <signal.h>
@@ -11,10 +12,10 @@
 #include <unistd.h>
 
 #define PERIOD 10000
-#define US_IN_S 1000000
-#define NS_IN_US 1000
 
 // factor to which we multiply the periods to generate the allowed inactive time
+// FIXME: the wait factor is too loose here, it should be tuned better after the
+// sleep management has been improved
 #define WAIT_FACTOR 2
 
 // NOTE: the pid is not strictly necessary but prevents other processes to start
@@ -28,6 +29,8 @@ static struct hearthbeat hearthbeats[PROCESS_N];
 
 bool register_hearthbeat(struct hearthbeat hearthbeats[PROCESS_N],
 						 const siginfo_t *info);
+
+bool kill_all_processes(struct hearthbeat hearthbeats[PROCESS_N]);
 
 int main(void) {
 	log_message(LOG_INFO, PROCESS_NAME, "Watchdog running");
@@ -52,6 +55,17 @@ int main(void) {
 	sigaddset(&mask, WATCHDOG_HEARTBEAT);
 	sigprocmask(SIG_BLOCK, &mask, NULL);
 
+	// waiting some time before registrationto give the processes time to start
+	// up
+	usleep(5 * US_IN_S);
+
+	// clearing the signal queue before starting the registration process
+	log_message(LOG_INFO, PROCESS_NAME,
+				"clearing signals queue before process registration");
+
+	while (sigtimedwait(&mask, NULL, &(struct timespec){0}) > 0)
+		;
+
 	long wait_time_us = max_period * WAIT_FACTOR;
 
 	struct timespec start_time_ts;
@@ -60,21 +74,18 @@ int main(void) {
 
 	// waiting for all processes to "register"
 	while (wait_time_us > 0) {
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_DEBUG, PROCESS_NAME,
 					"%d us to go for registration phase to finish",
 					wait_time_us);
 
-		const struct timespec timeout = {
-			.tv_sec = wait_time_us / US_IN_S,
-			.tv_nsec = (wait_time_us % US_IN_S) * NS_IN_US,
-		};
+		const struct timespec wait_time_ts = us_to_ts(wait_time_us);
 
 		log_message(
-			LOG_INFO, PROCESS_NAME,
+			LOG_DEBUG, PROCESS_NAME,
 			"waiting for the signals for maximum %d seconds, %d nanoseconds",
-			timeout.tv_sec, timeout.tv_nsec);
+			wait_time_ts.tv_sec, wait_time_ts.tv_nsec);
 
-		int ret = sigtimedwait(&mask, &info, &timeout);
+		int ret = sigtimedwait(&mask, &info, &wait_time_ts);
 
 		if (ret >= 0) {
 			register_hearthbeat(hearthbeats, &info);
@@ -84,10 +95,7 @@ int main(void) {
 
 		clock_gettime(CLOCK_REALTIME, &end_time_ts);
 
-		wait_time_us -=
-			(end_time_ts.tv_sec - start_time_ts.tv_sec) * US_IN_S +
-			(end_time_ts.tv_nsec - start_time_ts.tv_nsec) / NS_IN_US;
-
+		wait_time_us -= ts_diff_us(end_time_ts, start_time_ts);
 		start_time_ts = end_time_ts;
 	}
 
@@ -102,7 +110,8 @@ int main(void) {
 				LOG_CRITICAL, PROCESS_NAME,
 				"process %d did not manage to register correctly, exiting...",
 				i);
-			exit(1);
+			/* kill_all_processes(hearthbeats); */
+			/* exit(1); */
 		}
 	}
 
@@ -114,13 +123,9 @@ int main(void) {
 		struct timespec start_time_ts, end_time_ts;
 
 		clock_gettime(CLOCK_REALTIME, &start_time_ts);
-
-		const int ret = sigtimedwait(
-			&mask, &info,
-			&(struct timespec){
-				.tv_sec = time_from_next_sampling_us / US_IN_S,
-				.tv_nsec = (time_from_next_sampling_us % US_IN_S) * NS_IN_US,
-			});
+		const struct timespec time_from_next_sampling_ts =
+			us_to_ts(time_from_next_sampling_us);
+		const int ret = sigtimedwait(&mask, &info, &time_from_next_sampling_ts);
 
 		if (ret >= 0) {
 			register_hearthbeat(hearthbeats, &info);
@@ -128,11 +133,10 @@ int main(void) {
 
 		clock_gettime(CLOCK_REALTIME, &end_time_ts);
 
-		time_from_next_sampling_us -=
-			(end_time_ts.tv_sec - start_time_ts.tv_sec) * US_IN_S +
-			(end_time_ts.tv_nsec - start_time_ts.tv_nsec) / NS_IN_US;
+		time_from_next_sampling_us -= ts_diff_us(end_time_ts, start_time_ts);
+		start_time_ts = end_time_ts;
 
-		log_message(LOG_INFO, PROCESS_NAME, "time from next sampling %d",
+		log_message(LOG_DEBUG, PROCESS_NAME, "time from next sampling %d",
 					time_from_next_sampling_us);
 
 		if (time_from_next_sampling_us > 0) {
@@ -147,8 +151,7 @@ int main(void) {
 		// checking if some processes are dead
 		for (int i = 0; i < PROCESS_N; ++i) {
 			const long elapsed_time_from_hearthbeat =
-				(end_time_ts.tv_sec - hearthbeats[i].ts.tv_sec) * US_IN_S +
-				(end_time_ts.tv_nsec - hearthbeats[i].ts.tv_nsec) / NS_IN_US;
+				ts_diff_us(end_time_ts, hearthbeats[i].ts);
 
 			log_message(LOG_INFO, PROCESS_NAME,
 						"elapsed time from hearthbeat for process %d: %d", i,
@@ -161,7 +164,7 @@ int main(void) {
 							"hearthbeat in the allowed time %d, exiting",
 							i, hearthbeats[i].pid,
 							process_periods[i] * WAIT_FACTOR);
-				// FIXME: here we should kill all other processes
+				kill_all_processes(hearthbeats);
 				exit(1);
 			}
 		}
@@ -173,7 +176,6 @@ int main(void) {
 
 bool register_hearthbeat(struct hearthbeat hearthbeats[PROCESS_N],
 						 const siginfo_t *info) {
-
 	if (info->si_signo != WATCHDOG_HEARTBEAT) {
 		log_message(LOG_WARN, PROCESS_NAME,
 					"invalid signal code received: %d from process with pid: "
@@ -199,7 +201,7 @@ bool register_hearthbeat(struct hearthbeat hearthbeats[PROCESS_N],
 					"with number: %d, already registered with pid: %d",
 					info->si_pid, sender_process,
 					hearthbeats[sender_process].pid);
-		// FIXME: here all processes should be killed not just exiting
+		kill_all_processes(hearthbeats);
 		exit(1);
 	}
 
@@ -212,4 +214,14 @@ bool register_hearthbeat(struct hearthbeat hearthbeats[PROCESS_N],
 	};
 
 	return true;
+}
+
+bool kill_all_processes(struct hearthbeat hearthbeats[PROCESS_N]) {
+	bool success = true;
+	for (int i = 0; i < PROCESS_N; ++i) {
+		if (hearthbeats[i].pid > 0) {
+			success &= kill(hearthbeats[i].pid, SIGKILL) > 0;
+		}
+	}
+	return success;
 }

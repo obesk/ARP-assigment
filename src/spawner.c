@@ -38,6 +38,9 @@ int main(void) {
 		exit(1);
 	}
 
+	// it's better for the watchdog to be the first to spawn since it can
+	// receive the signals immediately
+
 	// spawning the watchdog
 	const pid_t watchdog_pid = fork();
 

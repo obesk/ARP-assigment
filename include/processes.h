@@ -17,8 +17,8 @@ enum Processes {
 };
 
 static const long process_periods[PROCESS_N] = {
-	[PROCESS_DRONE] = 100,		 [PROCESS_INPUT] = 10000,
-	[PROCESS_MAP] = 10000,		 [PROCESS_TARGETS] = 1000,
+	[PROCESS_DRONE] = 10000,	 [PROCESS_INPUT] = 20000,
+	[PROCESS_MAP] = 100000,		 [PROCESS_TARGETS] = 10000,
 	[PROCESS_OBSTACLES] = 10000,
 };
 

@@ -1,11 +1,11 @@
-
-#include "watchdog.h"
 #define PROCESS_NAME "TARGETS"
 
 #include "blackboard.h"
 #include "logging.h"
 #include "processes.h"
 #include "target.h"
+#include "time_management.h"
+#include "watchdog.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -36,7 +36,9 @@ int main(int argc, char **argv) {
 	const int obstacle_update_cycles = OBSTACLE_UPDATE_TIME / PERIOD;
 	int cycles = 0;
 
+	struct timespec start_exec_ts, end_exec_ts;
 	while (true) {
+		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 		// messageWrite(&get_drone_position, wpfd, rpfd);
 		struct Obstacles obstacles;
 
@@ -56,11 +58,13 @@ int main(int argc, char **argv) {
 		obstacles.n = MAX_OBSTACLES;
 		blackboard_set(SECTOR_OBSTACLES,
 					   &(union Payload){.obstacles = obstacles}, wpfd, rpfd);
-		watchdog_send_hearthbeat(watchdog_pid, PROCESS_OBSTACLES);
 
 	sleep:
-		usleep(PERIOD);
+		watchdog_send_hearthbeat(watchdog_pid, PROCESS_OBSTACLES);
 		++cycles;
+
+		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
+		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
 
 	close(rpfd);

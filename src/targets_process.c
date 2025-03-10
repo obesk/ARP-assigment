@@ -1,10 +1,11 @@
-#include "watchdog.h"
 #define PROCESS_NAME "TARGETS"
 
 #include "blackboard.h"
 #include "logging.h"
 #include "processes.h"
 #include "target.h"
+#include "time_management.h"
+#include "watchdog.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -31,7 +32,10 @@ int main(int argc, char **argv) {
 	int wpfd = atoi(argv[2]);
 	int watchdog_pid = atoi(argv[3]);
 
+	struct timespec start_exec_ts, end_exec_ts;
 	while (true) {
+		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
+
 		// checking the state of the targets to see if they need to be updated
 		const struct Message targets_answer =
 			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
@@ -41,7 +45,7 @@ int main(int argc, char **argv) {
 										   : (struct Targets){0};
 
 		if (targets.n > 0) {
-			continue;
+			goto sleep;
 		}
 
 		struct Targets new_targets;
@@ -58,8 +62,10 @@ int main(int argc, char **argv) {
 		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
 					   wpfd, rpfd);
 
+	sleep:
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_TARGETS);
-		usleep(PERIOD);
+		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
+		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
 	close(rpfd);
 	close(wpfd);

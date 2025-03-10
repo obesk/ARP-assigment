@@ -3,6 +3,7 @@
 #include "blackboard.h"
 #include "logging.h"
 #include "processes.h"
+#include "time_management.h"
 #include "vec2d.h"
 #include "watchdog.h"
 
@@ -48,7 +49,10 @@ int main(int argc, char **argv) {
 	struct Vec2D old_drone_positions[2] = {0}; // 0 is the most recent
 	long old_time_passed = PERIOD;			   // time passed between the two
 
+	struct timespec start_exec_ts, end_exec_ts;
 	while (1) {
+		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
+
 		const struct Message drone_force_answer =
 			blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
 
@@ -164,8 +168,9 @@ int main(int argc, char **argv) {
 		old_drone_positions[0] = drone_position;
 
 		watchdog_send_hearthbeat(whatchdog_pid, PROCESS_DRONE);
-		// FIXME: a more refined sleep wich accounts for execution time
-		usleep(PERIOD);
+		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
+
+		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
 
 	close(wpfd);

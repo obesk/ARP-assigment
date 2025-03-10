@@ -1,10 +1,10 @@
-#include "watchdog.h"
-#include <signal.h>
 #define PROCESS_NAME "MAP"
 
 #include "blackboard.h"
 #include "processes.h"
+#include "time_management.h"
 #include "vec2d.h"
+#include "watchdog.h"
 
 #include <ncurses.h>
 
@@ -39,7 +39,9 @@ int main(int argc, char **argv) {
 	const pid_t watchdog_pid = atoi(argv[3]);
 
 	WINDOW *border = newwin(0, 0, 0, 0);
+	struct timespec start_exec_ts, end_exec_ts;
 	while (1) {
+		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 		// TODO: should probably be done only on resize
 
 		// log_message(LOG_INFO, PROCESS_NAME,
@@ -99,11 +101,11 @@ int main(int argc, char **argv) {
 		}
 
 		wrefresh(border);
-		// mvwprintw(border, 0, 0, "%c", '+');
 		refresh();
-		// TODO: add period
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_MAP);
-		usleep(PERIOD);
+
+		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
+		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
 
 	close(rpfd);
