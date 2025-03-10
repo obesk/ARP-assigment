@@ -1,11 +1,11 @@
-#include "processes.h"
-#include "watchdog.h"
-#include <signal.h>
 #define PROCESS_NAME "INPUT"
 
 #include "blackboard.h"
 #include "keys.h"
 #include "logging.h"
+#include "processes.h"
+#include "time_management.h"
+#include "watchdog.h"
 
 #include <ncurses.h>
 #include <stdlib.h>
@@ -84,7 +84,9 @@ int main(int argc, char **argv) {
 
 	char user_input;
 
+	struct timespec start_exec_ts, end_exec_ts;
 	while (1) {
+		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 
 		// input acquisition and management
 		user_input = getch();
@@ -141,10 +143,9 @@ int main(int argc, char **argv) {
 		// drawing
 		draw_buttons(btn_wins, btn_highlights);
 		refresh();
-
-		// TODO: here it would be better to define a period for every task
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_INPUT);
-		usleep(PERIOD); // Slight delay to avoid high CPU usage (50ms)
+		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
+		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
 
 	close(rpfd);
