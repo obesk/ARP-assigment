@@ -18,7 +18,7 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 
-	struct Blackboard blackboard;
+	struct Blackboard blackboard = {0};
 
 	const int expected_argc = PROCESS_N * 2 + 1; //+1 for the program name
 
