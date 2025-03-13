@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 
 	struct Blackboard blackboard = {0};
+	blackboard.drone.position.x = GEOFENCE / 2.;
+	blackboard.drone.position.y = GEOFENCE / 2.;
 
 	const int expected_argc = PROCESS_N * 2 + 1; //+1 for the program name
 

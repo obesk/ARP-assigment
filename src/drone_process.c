@@ -1,3 +1,4 @@
+#include <stdio.h>
 #define PROCESS_NAME "DRONE"
 
 #include "blackboard.h"
@@ -15,13 +16,15 @@
 #define PERIOD process_periods[PROCESS_DRONE]
 #define US_TO_S 0.000001
 
-#define MAX_OBSTACLE_DISTANCE 5.0
-#define MAX_TARGET_DISTANCE 5.0
-#define TARGET_CAUGHT_DISTANCE 1
+#define MAX_OBSTACLE_DISTANCE 10
+// TODO: consider the possibility of using 1 char distance
+#define MIN_OBSTACLE_DISTANCE 2
+#define MAX_TARGET_DISTANCE 10.0
+#define TARGET_CAUGHT_DISTANCE 1.0
 
 // TODO: this needs to be decreased probably
-#define TARGET_ATTRACTION_COEFF 50.0
-#define OBSTACLE_REPULSION_COEFF 10.0
+#define TARGET_ATTRACTION_COEFF 0.0
+#define OBSTACLE_REPULSION_COEFF 1.0
 
 struct Vec2D
 calculate_target_attraction_force(const struct Targets *const targets,
@@ -46,8 +49,11 @@ int main(int argc, char **argv) {
 	int wpfd = atoi(argv[2]);
 	int whatchdog_pid = atoi(argv[3]);
 
-	struct Vec2D old_drone_positions[2] = {0}; // 0 is the most recent
-	long old_time_passed = PERIOD;			   // time passed between the two
+	struct Vec2D old_drone_positions[2] = {
+		{GEOFENCE / 2., GEOFENCE / 2.},
+		{GEOFENCE / 2., GEOFENCE / 2.},
+	}; // 0 is the most recent
+	long old_time_passed = PERIOD; // time passed between the two
 
 	struct timespec start_exec_ts, end_exec_ts;
 	while (1) {
@@ -63,7 +69,7 @@ int main(int argc, char **argv) {
 				? drone_force_answer.payload.drone_force
 				: (struct Vec2D){0};
 
-		log_message(LOG_DEBUG, PROCESS_NAME, "drone_force: x %f, y: %f",
+		log_message(LOG_DEBUG, PROCESS_NAME, "drone_force: x %lf, y: %lf",
 					drone_force.x, drone_force.y);
 
 		const struct Message position_answer =
@@ -117,6 +123,9 @@ int main(int argc, char **argv) {
 		const struct Vec2D curr_force =
 			vec2D_sum(drone_force, vec2D_sum(obstacles_force, targets_force));
 
+		log_message(LOG_INFO, PROCESS_NAME, "total force: x %lf, y: %lf",
+					curr_force.x, curr_force.y);
+
 		// Latex formula :
 		// x_i = \frac{2M x_{i-1} - M x_{i-2} + K T_{i-1} x_{i-1} + T_{i-1}
 		// T_i \sum F_{x_i}}{M + K T_{i-1}} this formula accounts for the
@@ -142,6 +151,9 @@ int main(int argc, char **argv) {
 					  curr_force.y) /
 				 (DRONE_MASS + VISCOUS_COEFF * (old_time_passed * US_TO_S)),
 		};
+
+		log_message(LOG_INFO, PROCESS_NAME, "drone position x: %lf, y: %lf",
+					new_position.x, new_position.y);
 
 		const union Payload payload = {.drone_position = new_position};
 
@@ -196,6 +208,9 @@ calculate_target_attraction_force(const struct Targets *const targets,
 			vec2D_scalar_mult(-TARGET_ATTRACTION_COEFF,
 							  vec2D_diff(drone_position, targets->targets[i])));
 	}
+	log_message(LOG_INFO, PROCESS_NAME,
+				"target attraction force calculated: %lf", targets_force);
+
 	return targets_force;
 }
 
@@ -204,23 +219,25 @@ calculate_obstacle_repulsion_force(const struct Obstacles *const obstacles,
 								   const struct Vec2D drone_position) {
 	struct Vec2D obstacles_force = {0};
 	for (int i = 0; i < obstacles->n; ++i) {
-		const double target_drone_distance =
-			vec2D_distance(obstacles->obstacles[i], drone_position);
+		const struct Vec2D obstacle_drone_vec =
+			vec2D_diff(drone_position, obstacles->obstacles[i]);
 
-		if (target_drone_distance <= MAX_OBSTACLE_DISTANCE) {
+		const double rho =
+			fmax(vec2D_modulus(obstacle_drone_vec), MIN_OBSTACLE_DISTANCE);
+
+		if (rho > MAX_OBSTACLE_DISTANCE) {
 			continue;
 		}
-
-		const struct Vec2D gradient = vec2D_normalize(
-			vec2D_diff(obstacles->obstacles[i], drone_position));
-
-		obstacles_force = vec2D_sum(
-			obstacles_force,
-			vec2D_scalar_mult(
-				OBSTACLE_REPULSION_COEFF *
-					(1 / target_drone_distance - 1 / MAX_OBSTACLE_DISTANCE) /
-					(target_drone_distance * target_drone_distance),
-				gradient));
+		const struct Vec2D grad = vec2D_normalize(obstacle_drone_vec);
+		const double force_module = OBSTACLE_REPULSION_COEFF *
+									(1. / rho - 1. / MAX_OBSTACLE_DISTANCE) *
+									(1. / (rho * rho)) * grad.x;
+		obstacles_force =
+			vec2D_sum(obstacles_force, vec2D_scalar_mult(force_module, grad));
 	}
+
+	log_message(LOG_INFO, PROCESS_NAME,
+				"obstacle repulsion force calculated: %lf",
+				vec2D_modulus(obstacles_force));
 	return obstacles_force;
 }
