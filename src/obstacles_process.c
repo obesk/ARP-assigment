@@ -1,9 +1,9 @@
-#define PROCESS_NAME "TARGETS"
+#define PROCESS_NAME "OBSTACLES"
 
 #include "blackboard.h"
 #include "logging.h"
+#include "obstacle.h"
 #include "processes.h"
-#include "target.h"
 #include "time_management.h"
 #include "watchdog.h"
 
@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #define PERIOD process_periods[PROCESS_OBSTACLES]
-#define OBSTACLE_UPDATE_TIME 10000000
+#define OBSTACLE_UPDATE_TIME 100000000
 
 int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
 			goto sleep;
 		}
 
-		for (int i = 0; i < MAX_TARGETS; ++i) {
-			// TODO: should probabily check that the targets do not spawn in
+		for (int i = 0; i < MAX_OBSTACLES; ++i) {
+			// TODO: should probabily check that the obstacles do not spawn in
 			// the same coordinates as the drone
 			obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
 			log_message(LOG_INFO, PROCESS_NAME,

@@ -14,8 +14,6 @@
 #define PERIOD 10000
 
 // factor to which we multiply the periods to generate the allowed inactive time
-// FIXME: the wait factor is too loose here, it should be tuned better after the
-// sleep management has been improved
 #define WAIT_FACTOR 2
 
 // NOTE: the pid is not strictly necessary but prevents other processes to start

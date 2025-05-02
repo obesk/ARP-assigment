@@ -59,11 +59,11 @@ int main(int argc, char **argv) {
 		const struct Vec2Dint char_drone_position =
 			convert_coordinates(border, drone_position);
 
-		log_message(
-			LOG_INFO, PROCESS_NAME,
-			"drone x: %f, drone x char: %d, drone y : % f, drone y char : % d ",
-			drone_position.x, char_drone_position.x, drone_position.y,
-			char_drone_position.y);
+		log_message(LOG_INFO, PROCESS_NAME,
+					"drone x: %lf, drone x char: %d, drone y : %lf, drone y "
+					"char : %d ",
+					drone_position.x, char_drone_position.x, drone_position.y,
+					char_drone_position.y);
 
 		werase(border);
 		box(border, 0, 0);
@@ -83,21 +83,28 @@ int main(int argc, char **argv) {
 			message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
 										  : (struct Obstacles){0};
 
+		log_message(LOG_INFO, PROCESS_NAME, "targets n: %d", targets.n);
 		for (int i = 0; i < targets.n; ++i) {
 			const struct Vec2Dint t =
 				convert_coordinates(border, targets.targets[i]);
 			log_message(
 				LOG_INFO, PROCESS_NAME,
-				"target x: %f, target x char: %d, target y : % f, target y "
-				"char : % d ",
-				targets.targets[i].x, t.x, targets.targets[i].y, t.y);
+				"target %d x: %lf, target x char: %d, target y : %lf, target y "
+				"char : %d ",
+				i, targets.targets[i].x, t.x, targets.targets[i].y, t.y);
 			mvwprintw(border, t.y, t.x, "%d", targets.n - i);
 		}
 
 		for (int i = 0; i < obstacles.n; ++i) {
-			const struct Vec2Dint t =
+			const struct Vec2Dint o =
 				convert_coordinates(border, obstacles.obstacles[i]);
-			mvwprintw(border, t.y, t.x, "%c", 'o');
+			log_message(LOG_INFO, PROCESS_NAME,
+						"obstacle %d x: %lf, obstacle x char: %d, obstacle y : "
+						"%lf, obstacle y "
+						"char : %d ",
+						i, obstacles.obstacles[i].x, o.x,
+						obstacles.obstacles[i].y, o.y);
+			mvwprintw(border, o.y, o.x, "%c", 'o');
 		}
 
 		wrefresh(border);
