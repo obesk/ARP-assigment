@@ -1,26 +1,42 @@
-#include "processes.h"
+#include "obstacle.h"
+#include "target.h"
 #define PROCESS_NAME "BLACKBOARD"
+
+#include "processes.h"
+#include "time_management.h"
 
 #include "blackboard.h"
 #include "logging.h"
 #include "pfds.h"
 #include "stdbool.h"
 
+#include <cjson/cJSON.h>
+
+// TODO: this needs to be dimensioned correctly
+#define JSON_MAX_FILE_SIZE 1000
+
 struct Blackboard {
 	struct Drone drone;
 	struct Targets targets;
 	struct Obstacles obstacles;
+	struct Config config;
 };
 
 bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 				   int wpfd);
 
+int loadJSONConfig(struct Config *const c);
+
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 
-	struct Blackboard blackboard = {0};
-	blackboard.drone.position.x = GEOFENCE / 2.;
-	blackboard.drone.position.y = GEOFENCE / 2.;
+	struct Blackboard blackboard = {
+		.drone.position.x = GEOFENCE / 2.,
+		.drone.position.y = GEOFENCE / 2.,
+	};
+	loadJSONConfig(&blackboard.config);
+
+	log_message(LOG_INFO, PROCESS_NAME, "loaded config");
 
 	const int expected_argc = PROCESS_N * 2 + 1; //+1 for the program name
 
@@ -34,40 +50,134 @@ int main(int argc, char **argv) {
 	struct PFDs *pfds = argsToPFDs(&argv[1]);
 	const int max_fd = getMaxFd(pfds) + 1;
 
+	struct timespec ts_start_exec, ts_end_exec;
+
+	const long us_update_config_period = 500000;
+	long us_update_config_remaining = us_update_config_period;
+
 	while (true) {
+		clock_gettime(CLOCK_REALTIME, &ts_start_exec);
 		fd_set to_read;
 		FD_ZERO(&to_read);
 
 		for (int i = 0; i < PROCESS_N; ++i) {
-			/* log_message(LOG_DEBUG, PROCESS_NAME, */
-			/* 	Adding pfd %d to the reading list", pfds->read[i]); */
 			FD_SET(pfds->read[i], &to_read);
 		}
 
-		/* log_message(LOG_DEBUG, PROCESS_NAME, "running select"); */
-		int n_to_read = select(max_fd, &to_read, NULL, NULL, NULL);
-		/* log_message(LOG_DEBUG, PROCESS_NAME, "select run"); */
+		struct timeval select_timeout = {
+			.tv_sec = us_update_config_remaining / US_IN_S,
+			.tv_usec = us_update_config_remaining % US_IN_S,
+		};
 
-		if (n_to_read <= 0) {
-			continue;
-		} else {
+		int n_to_read = select(max_fd, &to_read, NULL, NULL, &select_timeout);
+		if (n_to_read > 0) {
 			log_message(LOG_DEBUG, PROCESS_NAME, "select returned something!");
+
+			for (int i = 0; i < PROCESS_N; ++i) {
+				if (FD_ISSET(pfds->read[i], &to_read)) {
+					log_message(LOG_DEBUG, PROCESS_NAME,
+								"Received message from pfid: %d",
+								pfds->read[i]);
+					const struct Message msg = messageRead(pfds->read[i]);
+
+					messageManage(&msg, &blackboard, pfds->write[i]);
+				}
+			}
 		}
 
-		for (int i = 0; i < PROCESS_N; ++i) {
-			if (FD_ISSET(pfds->read[i], &to_read)) {
-				log_message(LOG_DEBUG, PROCESS_NAME,
-							"Received message from pfid: %d", pfds->read[i]);
-				const struct Message msg = messageRead(pfds->read[i]);
-
-				messageManage(&msg, &blackboard, pfds->write[i]);
-			}
+		clock_gettime(CLOCK_REALTIME, &ts_end_exec);
+		us_update_config_remaining -= ts_diff_us(ts_end_exec, ts_start_exec);
+		if (us_update_config_remaining <= 0) {
+			us_update_config_remaining = us_update_config_period;
+			loadJSONConfig(&blackboard.config);
 		}
 	}
 }
 
+int loadJSONConfig(struct Config *const c) {
+	FILE *file;
+	char jsonBuffer[JSON_MAX_FILE_SIZE];
+
+	file = fopen("appsettings.json", "r");
+
+	log_message(LOG_INFO, PROCESS_NAME, "Opened file");
+
+	if (file == NULL) {
+		perror("Error opening the file");
+		return EXIT_FAILURE;
+	}
+
+	int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), file);
+	if (!len) {
+		perror("Error reading file");
+	}
+	log_message(LOG_INFO, PROCESS_NAME, "Read file");
+
+	cJSON *json = cJSON_Parse(jsonBuffer);
+	log_message(LOG_INFO, PROCESS_NAME, "Parsed json");
+
+	if (json == NULL) {
+		perror("Error parsing the file");
+		return EXIT_FAILURE;
+	}
+
+	log_message(LOG_INFO, PROCESS_NAME, "No errors in parsing");
+
+	c->n_obstacles =
+		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
+	if (c->n_obstacles < 0 || c->n_obstacles > MAX_OBSTACLES) {
+		log_message(LOG_ERROR, PROCESS_NAME,
+				"Value specified for numer of obstacles in settings is not"
+				"valid, setting it to %d", MAX_OBSTACLES);
+	}
+
+	c->n_targets =
+		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
+	if (c->n_targets < 0 || c->n_targets > MAX_TARGETS) {
+		log_message(LOG_ERROR, PROCESS_NAME,
+				"Value specified for numer of targets in settings is not valid,"
+				"setting it to %d", MAX_TARGETS);
+	}
+
+	c->force_applied_N =
+		cJSON_GetObjectItemCaseSensitive(json, "force_applied_N")->valuedouble;
+	c->drone_mass =
+		cJSON_GetObjectItemCaseSensitive(json, "drone_mass_kg")->valuedouble;
+	c->viscous_coefficient =
+		cJSON_GetObjectItemCaseSensitive(json, "viscous_coefficient_Nms")
+			->valuedouble;
+
+	c->max_obstacle_distance =
+		cJSON_GetObjectItemCaseSensitive(json, "max_obstacle_distance_m")
+			->valuedouble;
+	c->min_obstacle_distance =
+		cJSON_GetObjectItemCaseSensitive(json, "min_obstacle_distance_m")
+			->valuedouble;
+
+	c->obstacle_repulsion_coeff =
+		cJSON_GetObjectItemCaseSensitive(json, "obstacle_repulsion_coeff")
+			->valuedouble;
+
+	c->max_target_distance =
+		cJSON_GetObjectItemCaseSensitive(json, "max_target_distance_m")
+			->valuedouble;
+	c->target_caught_distance =
+		cJSON_GetObjectItemCaseSensitive(json, "target_caught_distance_m")
+			->valuedouble;
+	c->target_attraction_coeff =
+		cJSON_GetObjectItemCaseSensitive(json, "target_attraction_coeff")
+			->valuedouble;
+
+	log_message(LOG_INFO, PROCESS_NAME, "read values");
+
+	fclose(file);
+	return true;
+}
+
 bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 				   int wpfd) {
+
+	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 	struct Message response;
 	response.sector = msg->sector;
 
@@ -89,6 +199,10 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			break;
 		case SECTOR_OBSTACLES:
 			response.payload.obstacles = b->obstacles;
+			break;
+		case SECTOR_CONFIG:
+			log_message(LOG_INFO, PROCESS_NAME, "config requested");
+			response.payload.config = b->config;
 			break;
 		default:
 			response = error_msg;

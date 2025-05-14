@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Iinclude -Wall -Wextra -Wpedantic
-LDFLAGS = -lm -lncurses
+LDFLAGS = -lm -lncurses -lcjson
 
 BIN_DIR = bin
 BUILD_DIR = build
