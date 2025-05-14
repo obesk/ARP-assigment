@@ -30,7 +30,7 @@ struct Vec2D calculate_target_attraction_force(
 	const struct Targets *const targets, const struct Vec2D drone_position,
 	double max_target_distance, double target_attraction_coeff);
 
-struct Vec2D calculate_obstacle_repulsion_force(
+struct Vec2D calculate_obstacles_repulsion_force(
 	const struct Obstacles *const obstacles, const struct Vec2D drone_position,
 	double max_obstacle_distance, double min_obstacle_distance,
 	double obstacle_repulsion_coeff);
@@ -148,9 +148,10 @@ int main(int argc, char **argv) {
 			&targets, drone_position, config.max_target_distance,
 			config.target_attraction_coeff);
 
-		const struct Vec2D obstacles_force = calculate_obstacle_repulsion_force(
-			&obstacles, drone_position, config.max_obstacle_distance,
-			config.min_obstacle_distance, config.obstacle_repulsion_coeff);
+		const struct Vec2D obstacles_force =
+			calculate_obstacles_repulsion_force(
+				&obstacles, drone_position, config.max_obstacle_distance,
+				config.min_obstacle_distance, config.obstacle_repulsion_coeff);
 		log_message(LOG_INFO, PROCESS_NAME, "calculated forces");
 
 		const struct Vec2D total_force =
@@ -254,26 +255,54 @@ struct Vec2D calculate_target_attraction_force(
 }
 
 struct Vec2D calculate_obstacle_repulsion_force(
+	const struct Vec2D obstacle, const struct Vec2D drone_position,
+	double max_obstacle_distance, double min_obstacle_distance,
+	double obstacle_repulsion_coeff) {
+
+	const struct Vec2D obstacle_drone_vec =
+		vec2D_diff(drone_position, obstacle);
+
+	const double rho =
+		fmax(vec2D_modulus(obstacle_drone_vec), min_obstacle_distance);
+
+	if (rho > max_obstacle_distance) {
+		return (struct Vec2D){0};
+	}
+	const struct Vec2D grad = vec2D_normalize(obstacle_drone_vec);
+	const double force_module = obstacle_repulsion_coeff *
+								(1. / rho - 1. / max_obstacle_distance) *
+								(1. / (rho * rho)) * grad.x;
+
+	return vec2D_scalar_mult(force_module, grad);
+}
+
+struct Vec2D calculate_obstacles_repulsion_force(
 	const struct Obstacles *const obstacles, const struct Vec2D drone_position,
 	double max_obstacle_distance, double min_obstacle_distance,
 	double obstacle_repulsion_coeff) {
+
 	struct Vec2D obstacles_force = {0};
 	for (int i = 0; i < obstacles->n; ++i) {
-		const struct Vec2D obstacle_drone_vec =
-			vec2D_diff(drone_position, obstacles->obstacles[i]);
+		obstacles_force = vec2D_sum(
+			obstacles_force,
+			calculate_obstacle_repulsion_force(
+				obstacles->obstacles[i], drone_position, max_obstacle_distance,
+				min_obstacle_distance, obstacle_repulsion_coeff));
+	}
 
-		const double rho =
-			fmax(vec2D_modulus(obstacle_drone_vec), min_obstacle_distance);
+	const struct Vec2D walls[4] = {
+		{.x = drone_position.x, .y = 0},		// top wall
+		{.x = GEOFENCE, .y = drone_position.y}, // right wall
+		{.x = drone_position.x, .y = GEOFENCE}, // bottom wall
+		{.x = 0, .y = drone_position.y},		// left wall
+	};
 
-		if (rho > max_obstacle_distance) {
-			continue;
-		}
-		const struct Vec2D grad = vec2D_normalize(obstacle_drone_vec);
-		const double force_module = obstacle_repulsion_coeff *
-									(1. / rho - 1. / max_obstacle_distance) *
-									(1. / (rho * rho)) * grad.x;
+	for (int i = 0; i < 4; ++i) {
 		obstacles_force =
-			vec2D_sum(obstacles_force, vec2D_scalar_mult(force_module, grad));
+			vec2D_diff(obstacles_force,
+					   calculate_obstacle_repulsion_force(
+						   walls[i], drone_position, max_obstacle_distance,
+						   min_obstacle_distance, obstacle_repulsion_coeff));
 	}
 
 	log_message(LOG_INFO, PROCESS_NAME,
