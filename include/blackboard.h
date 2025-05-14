@@ -35,15 +35,34 @@ enum Result {
 	RES_ERR,
 };
 
+struct Config {
+	int n_obstacles;
+	int n_targets;
+
+	float force_applied_N;
+
+	float drone_mass;
+	float viscous_coefficient;
+
+	float max_obstacle_distance;
+	float min_obstacle_distance;
+	float obstacle_repulsion_coeff;
+
+	float max_target_distance;
+	float target_caught_distance;
+	float target_attraction_coeff;
+};
+
 union Payload {
 	enum Result ack;
-	// here the drone struct is "split" so that differnt processes that update
+	// here the drone struct is "split" so that different processes that update
 	// the force (like input) don't interfer with other processess which update
 	// the position (drone)
 	struct Vec2D drone_position;
 	struct Vec2D drone_force;
 	struct Targets targets;
 	struct Obstacles obstacles;
+	struct Config config;
 };
 
 enum MemorySector {
@@ -52,6 +71,8 @@ enum MemorySector {
 
 	SECTOR_TARGETS,
 	SECTOR_OBSTACLES,
+
+	SECTOR_CONFIG,
 
 	SECTOR_N,
 };

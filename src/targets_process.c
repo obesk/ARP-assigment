@@ -48,8 +48,16 @@ int main(int argc, char **argv) {
 			goto sleep;
 		}
 
-		struct Targets new_targets;
-		for (int i = 0; i < MAX_TARGETS; ++i) {
+		const struct Message config_answer =
+			blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
+		struct Config config = message_ok(&config_answer)
+								   ? config_answer.payload.config
+								   : (struct Config){0};
+
+		struct Targets new_targets = { .n = config.n_targets };
+
+		new_targets.n = MAX_TARGETS;
+		for (int i = 0; i < new_targets.n; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
 			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
@@ -58,7 +66,6 @@ int main(int argc, char **argv) {
 						new_targets.targets[i].x, new_targets.targets[i].y);
 		}
 
-		new_targets.n = MAX_TARGETS;
 		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
 					   wpfd, rpfd);
 

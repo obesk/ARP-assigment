@@ -40,13 +40,20 @@ int main(int argc, char **argv) {
 	while (true) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 		// messageWrite(&get_drone_position, wpfd, rpfd);
-		struct Obstacles obstacles;
 
 		if (cycles % obstacle_update_cycles) {
 			goto sleep;
 		}
 
-		for (int i = 0; i < MAX_OBSTACLES; ++i) {
+		const struct Message config_answer =
+			blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
+		struct Config config = message_ok(&config_answer)
+								   ? config_answer.payload.config
+								   : (struct Config){0};
+
+		struct Obstacles obstacles = { .n = config.n_obstacles };
+
+		for (int i = 0; i < obstacles.n; ++i) {
 			// TODO: should probabily check that the obstacles do not spawn in
 			// the same coordinates as the drone
 			obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
@@ -55,7 +62,6 @@ int main(int argc, char **argv) {
 						obstacles.obstacles[i].x, obstacles.obstacles[i].y);
 		}
 
-		obstacles.n = MAX_OBSTACLES;
 		blackboard_set(SECTOR_OBSTACLES,
 					   &(union Payload){.obstacles = obstacles}, wpfd, rpfd);
 
