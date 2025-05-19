@@ -49,6 +49,11 @@ int main(int argc, char **argv) {
 		// 			"h_m_to_char: %f",
 		// 			win_width, win_height, w_m_to_char, h_m_to_char);
 
+		const struct Message score_answer =
+			blackboard_get(SECTOR_SCORE, wpfd, rpfd);
+		const int score =
+			message_ok(&score_answer) ? score_answer.payload.score : 0;
+
 		const struct Message drone_answer =
 			blackboard_get(SECTOR_DRONE_POSITION, wpfd, rpfd);
 
@@ -70,6 +75,8 @@ int main(int argc, char **argv) {
 
 		mvwprintw(border, char_drone_position.y, char_drone_position.x, "%c",
 				  '+');
+
+		mvwprintw(border, 0, 0, "score: %d", score);
 
 		const struct Message targets_answer =
 			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);

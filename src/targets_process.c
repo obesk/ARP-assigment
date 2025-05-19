@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
 	int wpfd = atoi(argv[2]);
 	int watchdog_pid = atoi(argv[3]);
 
+	int current_target_n = 0;
+
 	struct timespec start_exec_ts, end_exec_ts;
 	while (true) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
@@ -44,9 +46,35 @@ int main(int argc, char **argv) {
 										   ? targets_answer.payload.targets
 										   : (struct Targets){0};
 
+		int caught_targets = current_target_n - targets.n;
+
+		if (caught_targets) {
+			const struct Message score_answer = blackboard_get(SECTOR_SCORE, wpfd, rpfd);
+			const int score = message_ok(&score_answer) ? score_answer.payload.score : 0;
+			const int new_score =  score + caught_targets * 100;
+			blackboard_set(SECTOR_SCORE,
+						   &(union Payload){.score = new_score }, wpfd,
+						   rpfd);
+			log_message(LOG_INFO, PROCESS_NAME, "updating the score on the"
+					"blackboard, after detecting target caught, score: %d:,"
+					"initial_score: %d, caught: %d", new_score, score,
+					caught_targets);
+			current_target_n = targets.n;
+		} 
+
 		if (targets.n > 0) {
 			goto sleep;
 		}
+		
+		// all targets caught, updating score and generating new targets
+
+		const struct Message score_answer =
+			blackboard_get(SECTOR_SCORE, wpfd, rpfd);
+
+		const int score = message_ok(&score_answer) ? targets_answer.payload.score : 0;
+		blackboard_set(SECTOR_SCORE,
+					   &(union Payload){.score = score + 1000 }, wpfd,
+					   rpfd);
 
 		const struct Message config_answer =
 			blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
@@ -56,7 +84,8 @@ int main(int argc, char **argv) {
 
 		struct Targets new_targets = { .n = config.n_targets };
 
-		new_targets.n = MAX_TARGETS;
+		log_message(LOG_INFO, PROCESS_NAME, "spawning %d targets:", new_targets.n);
+
 		for (int i = 0; i < new_targets.n; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
@@ -66,6 +95,7 @@ int main(int argc, char **argv) {
 						new_targets.targets[i].x, new_targets.targets[i].y);
 		}
 
+		current_target_n = new_targets.n;
 		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
 					   wpfd, rpfd);
 

@@ -20,6 +20,7 @@ struct Blackboard {
 	struct Targets targets;
 	struct Obstacles obstacles;
 	struct Config config;
+	int score;
 };
 
 bool messageManage(const struct Message *const msg, struct Blackboard *const b,
@@ -132,7 +133,7 @@ int loadJSONConfig(struct Config *const c) {
 	}
 
 	c->n_targets =
-		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
+		cJSON_GetObjectItemCaseSensitive(json, "n_targets")->valueint;
 	if (c->n_targets < 0 || c->n_targets > MAX_TARGETS) {
 		log_message(LOG_ERROR, PROCESS_NAME,
 				"Value specified for numer of targets in settings is not valid,"
@@ -201,8 +202,10 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			response.payload.obstacles = b->obstacles;
 			break;
 		case SECTOR_CONFIG:
-			log_message(LOG_INFO, PROCESS_NAME, "config requested");
 			response.payload.config = b->config;
+			break;
+		case SECTOR_SCORE:
+			response.payload.score = b->score;
 			break;
 		default:
 			response = error_msg;
@@ -223,6 +226,9 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			break;
 		case SECTOR_OBSTACLES:
 			b->obstacles = msg->payload.obstacles;
+			break;
+		case SECTOR_SCORE:
+			b->score = msg->payload.score;
 			break;
 		default:
 			response = reject_msg;
