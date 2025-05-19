@@ -63,6 +63,7 @@ union Payload {
 	struct Targets targets;
 	struct Obstacles obstacles;
 	struct Config config;
+	int score;
 };
 
 enum MemorySector {
@@ -73,6 +74,8 @@ enum MemorySector {
 	SECTOR_OBSTACLES,
 
 	SECTOR_CONFIG,
+
+	SECTOR_SCORE,
 
 	SECTOR_N,
 };
