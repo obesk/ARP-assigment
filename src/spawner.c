@@ -43,7 +43,6 @@ int main(void) {
 
 	// spawning the watchdog
 	const pid_t watchdog_pid = fork();
-
 	if (watchdog_pid < 0) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
 					"Error while creating the watchdog process: %s",
@@ -59,8 +58,6 @@ int main(void) {
 	}
 
 	// spawning the blackboard
-	char **args = allPFDsToArgs(&blackboard_pfds, blackboard_executable);
-
 	const pid_t blackboard_pid = fork();
 	if (blackboard_pid < 0) {
 		log_message(LOG_CRITICAL, PROCESS_NAME,
@@ -73,50 +70,29 @@ int main(void) {
 					"Created blackboard child process with executable: %s",
 					blackboard_executable);
 
-		// closing all the unused pipe ends
-		closeAllPFDs(&processes_pfds);
+		// creating the args for the blackboard
+		// since the process gets substituted there is 2
+		const int n_args_blackboard = (PROCESS_N * 2 + 2);
+		char **args = malloc(sizeof(char *) * n_args_blackboard);
+		args[0] = malloc(strlen(blackboard_executable) + 1);
+		strcpy(args[0], blackboard_executable);
+		int *p = (int *)&blackboard_pfds;
+		for (int i = 1; i < n_args_blackboard - 1; ++i) {
+			args[i] = malloc(INT_STR_LEN);
+			snprintf(args[i], INT_STR_LEN, "%d", *p);
+			log_message(LOG_DEBUG, PROCESS_NAME, "FD[%d]: %s", i, args[i]);
+			++p;
+		}
+		args[n_args_blackboard - 1] = NULL; // setting the last element to NULL for execv
+
+		//since the malloc is done after the fork there is not need to free the
+		//memory since it's reclaimed by the execev
 		execv(blackboard_executable, args);
 		return 0;
 	}
 
-	// spawning processes
+	// spawning the other processes
 	for (int i = 0; i < PROCESS_N; ++i) {
-
-		// (2 optional for the konsole spawn) + 1 for the program name + 2 for
-		// the pfds +1 for the watchdog pid + 1 for the NULL required by execv
-		const int n_args = 5 + (2 * spawn_in_konsole[i]);
-
-		char **args = malloc((sizeof(char *) * n_args));
-
-		// FIXME: by passing the already allocated pointer to PFDsToArgs it
-		// should be possible to do the following operations in the function
-		// or just manage the konsole option from it
-		int args_count = 0;
-
-		if (spawn_in_konsole[i]) {
-			args[args_count++] = "/usr/bin/konsole";
-			args[args_count++] = "-e";
-		}
-
-		args[args_count] = malloc(strlen(executables[i]) + 1);
-
-		strcpy(args[args_count++], executables[i]);
-
-		// converting the processes file descriptors and copying them on the
-		// args
-		args[args_count] = malloc(INT_STR_LEN);
-		snprintf(args[args_count++], INT_STR_LEN, "%d", processes_pfds.read[i]);
-		args[args_count] = malloc(INT_STR_LEN);
-		snprintf(args[args_count++], INT_STR_LEN, "%d",
-				 processes_pfds.write[i]);
-		args[args_count] = malloc(INT_STR_LEN);
-		snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
-
-		args[args_count] = NULL;
-
-		// char **args = PFDsToArgs(processes_pfds.read[i],
-		// 						 processes_pfds.write[i], executables[i]);
-
 		pid_t pid = fork();
 		if (pid < 0) {
 			log_message(LOG_CRITICAL, PROCESS_NAME,
@@ -129,16 +105,49 @@ int main(void) {
 						"Created child process with executable: %s",
 						executables[i]);
 
-			// closing all unused pfds ends
-			closeAllPFDs(&blackboard_pfds);
-			for (int j = 0; j < PROCESS_N; ++j) {
-				// keeping open only the pfds needed by the process
-				if (i == j) {
-					continue;
-				}
-				close(processes_pfds.read[j]);
-				close(processes_pfds.write[j]);
+			// (2 optional for the konsole spawn) + 1 for the program name + 2 for
+			// the pfds +1 for the watchdog pid + 1 for the NULL required by execv
+			const int n_args = 5 + (2 * spawn_in_konsole[i]);
+
+			char **args = malloc((sizeof(char *) * n_args));
+
+			// FIXME: by passing the already allocated pointer to PFDsToArgs it
+			// should be possible to do the following operations in the function
+			// or just manage the konsole option from it
+			int args_count = 0;
+
+			if (spawn_in_konsole[i]) {
+				args[args_count++] = "/usr/bin/konsole";
+				args[args_count++] = "-e";
 			}
+
+			args[args_count] = malloc(strlen(executables[i]) + 1);
+
+			strcpy(args[args_count++], executables[i]);
+
+			// converting the processes file descriptors and copying them on the
+			// args
+			args[args_count] = malloc(INT_STR_LEN);
+			snprintf(args[args_count++], INT_STR_LEN, "%d", processes_pfds.read[i]);
+			args[args_count] = malloc(INT_STR_LEN);
+			snprintf(args[args_count++], INT_STR_LEN, "%d",
+					 processes_pfds.write[i]);
+			args[args_count] = malloc(INT_STR_LEN);
+			snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
+
+			args[args_count++] = NULL;
+			// closing all unused pfds ends
+			// FIXME: it may be a good idea to close unused pipes currently this
+			// instruction cause problems, check before uncommenting
+			// closeAllPFDs(&blackboard_pfds);
+			// for (int j = 0; j < PROCESS_N; ++j) {
+			// 	// keeping open only the pfds needed by the process
+			// 	if (i == j) {
+			// 		continue;
+			// 	}
+			// 	close(processes_pfds.read[j]);
+			// 	close(processes_pfds.write[j]);
+			// }
 			execv(args[0], args);
 		}
 	}
