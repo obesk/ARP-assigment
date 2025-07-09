@@ -75,17 +75,19 @@ int main(void) {
 		// creating the args for the blackboard
 		// since the process gets substituted there is 2
 		const int n_args_blackboard = (PROCESS_N * 2 + 2);
+		int args_count = 0;
 		char **args = malloc(sizeof(char *) * n_args_blackboard);
-		args[0] = malloc(strlen(blackboard_executable) + 1);
-		strcpy(args[0], blackboard_executable);
+		args[args_count] = malloc(strlen(blackboard_executable) + 1);
+		strcpy(args[args_count++], blackboard_executable);
+		// pointer arithmetic is used to index both read and write pfds
 		int *p = (int *)&blackboard_pfds;
-		for (int i = 1; i < n_args_blackboard - 1; ++i) {
-			args[i] = malloc(INT_STR_LEN);
-			snprintf(args[i], INT_STR_LEN, "%d", *p);
-			log_message(LOG_DEBUG, PROCESS_NAME, "FD[%d]: %s", i, args[i]);
-			++p;
+		for (int i = 0; i < n_args_blackboard; ++i) {
+			args[args_count] = malloc(INT_STR_LEN);
+			snprintf(args[args_count++], INT_STR_LEN, "%d", *(p++));
 		}
-		args[n_args_blackboard - 1] = NULL; // setting the last element to NULL for execv
+		args[args_count] = malloc(INT_STR_LEN);
+		snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
+		args[args_count++] = NULL; // setting the last element to NULL for execv
 
 		//since the malloc is done after the fork there is not need to free the
 		//memory since it's reclaimed by the execev
