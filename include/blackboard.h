@@ -1,15 +1,12 @@
 #ifndef BLACKBOARD_H
 #define BLACKBOARD_H
 
-#include "drone.h"
 #include "logging.h"
 #include "obstacle.h"
 #include "target.h"
 #include "vec2d.h"
 
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #ifndef PROCESS_NAME
@@ -99,13 +96,12 @@ struct Message messageRead(const int pfd) {
 	ssize_t bytes_read = read(pfd, &msg, sizeof(struct Message));
 
 	if (bytes_read == -1) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"read_message: Error reading from pipe");
+		log_message(LOG_CRITICAL, "read_message: Error reading from pipe");
 		return error_msg;
 	}
 	if (bytes_read != sizeof(struct Message)) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"read_message: Partial read detected, bytes read: %d\n",
+		log_message(LOG_CRITICAL,
+					"read_message: Partial read detected, bytes read: %ld\n",
 					bytes_read);
 		return error_msg;
 	}
@@ -114,22 +110,19 @@ struct Message messageRead(const int pfd) {
 }
 
 bool messageWrite(const struct Message *const m, const int wpfd) {
-	log_message(LOG_TRACE, PROCESS_NAME, "trying to write message to pfd: %d",
-				wpfd);
+	log_message(LOG_TRACE, "trying to write message to pfd: %d", wpfd);
 
 	ssize_t bytes_written = write(wpfd, m, sizeof(struct Message));
 
 	if (bytes_written == -1) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"write_message: Error writing to pipe");
+		log_message(LOG_CRITICAL, "write_message: Error writing to pipe");
 		return false;
 	}
 	if (bytes_written != sizeof(struct Message)) {
 		fprintf(stderr, "write_message: Partial write detected\n");
 		return false;
 	}
-	log_message(LOG_TRACE, PROCESS_NAME, "correctly wrote message to pfd: %d",
-				wpfd);
+	log_message(LOG_TRACE, "correctly wrote message to pfd: %d", wpfd);
 
 	return true;
 }
@@ -138,8 +131,7 @@ struct Message blackboard_get(enum MemorySector sector, const int wpfd,
 							  const int rpfd) {
 
 	if (sector < 0 || sector >= SECTOR_N) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"blackboard_get: invalid sector selected");
+		log_message(LOG_CRITICAL, "blackboard_get: invalid sector selected");
 		return error_msg;
 	}
 
@@ -171,8 +163,7 @@ bool blackboard_set(enum MemorySector sector, const union Payload *payload,
 					int wpfd, int rpfd) {
 
 	if (sector < 0 || sector >= SECTOR_N) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
-					"blackboard_get: invalid sector selected");
+		log_message(LOG_CRITICAL, "blackboard_get: invalid sector selected");
 		return false;
 	}
 
@@ -203,12 +194,12 @@ struct Vec2D blackboard_get_drone_position(int wpfd, int rpfd) {
 		blackboard_get(SECTOR_DRONE_POSITION, wpfd, rpfd);
 
 	return message_ok(&drone_answer) ? drone_answer.payload.drone_position
-								  : (struct Vec2D){0};
-
+									 : (struct Vec2D){0};
 }
 
 struct Targets blackboard_get_targets(int wpfd, int rpfd) {
-	const struct Message targets_answer = blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
+	const struct Message targets_answer =
+		blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
 	return message_ok(&targets_answer) ? targets_answer.payload.targets
 									   : (struct Targets){0};
 }
@@ -217,15 +208,14 @@ struct Vec2D blackboard_get_drone_force(int wpfd, int rpfd) {
 	const struct Message answer =
 		blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
 
-	return message_ok(&answer) ? answer.payload.drone_force 
-							   : (struct Vec2D){0};
+	return message_ok(&answer) ? answer.payload.drone_force : (struct Vec2D){0};
 }
 
 struct Config blackboard_get_config(int wpfd, int rpfd) {
 	const struct Message config_answer =
 		blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
 	return message_ok(&config_answer) ? config_answer.payload.config
-							   : (struct Config){0};
+									  : (struct Config){0};
 }
 
 struct Obstacles blackboard_get_obstacles(int wpfd, int rpfd) {
@@ -233,7 +223,7 @@ struct Obstacles blackboard_get_obstacles(int wpfd, int rpfd) {
 		blackboard_get(SECTOR_OBSTACLES, wpfd, rpfd);
 
 	return message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
-									     : (struct Obstacles){0};
+										 : (struct Obstacles){0};
 }
 
 #endif // BLACKBOARD_H

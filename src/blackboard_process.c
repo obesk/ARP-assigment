@@ -1,5 +1,6 @@
 #define PROCESS_NAME "BLACKBOARD"
 
+#include "drone.h"
 #include "obstacle.h"
 #include "target.h"
 #include "watchdog.h"
@@ -32,7 +33,7 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 int loadJSONConfig(struct Config *const c);
 
 int main(int argc, char **argv) {
-	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
+	log_message(LOG_INFO, "Blackboard running");
 
 	struct Blackboard blackboard = {
 		.drone.position.x = GEOFENCE / 2.,
@@ -40,23 +41,21 @@ int main(int argc, char **argv) {
 	};
 	loadJSONConfig(&blackboard.config);
 
-	log_message(LOG_INFO, PROCESS_NAME, "loaded config");
+	log_message(LOG_INFO, "loaded config");
 	
 	// read and write for each processes
 	// +1 for the program name and +1 for the watchdog pid
 	const int expected_argc = PROCESS_N * 2 + 2; 
 
 	if (argc != expected_argc) {
-		log_message(
-			LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 			"Erroneous number of arguments passed, expected: %d, got: %d",
 			expected_argc, argc);
 	}
 
 	struct PFDs *pfds = argsToPFDs(&argv[1]);
 	int watchdog_pid = atoi(argv[argc - 1]);
-	log_message(
-		LOG_INFO, PROCESS_NAME,
+	log_message(LOG_INFO,
 		"argc: %d, watchdog_pid: %d",
 		expected_argc, watchdog_pid);
 
@@ -80,11 +79,11 @@ int main(int argc, char **argv) {
 
 		int n_to_read = select(max_fd, &to_read, NULL, NULL, &select_timeout);
 		if (n_to_read > 0) {
-			log_message(LOG_DEBUG, PROCESS_NAME, "select returned something!");
+			log_message(LOG_DEBUG, "select returned something!");
 
 			for (int i = 0; i < PROCESS_N; ++i) {
 				if (FD_ISSET(pfds->read[i], &to_read)) {
-					log_message(LOG_DEBUG, PROCESS_NAME,
+					log_message(LOG_DEBUG, 
 								"Received message from pfid: %d",
 								pfds->read[i]);
 					const struct Message msg = messageRead(pfds->read[i]);
@@ -97,7 +96,7 @@ int main(int argc, char **argv) {
 		clock_gettime(CLOCK_REALTIME, &ts_end_exec);
 		us_update_config_remaining -= ts_diff_us(ts_end_exec, ts_start_exec);
 		if (us_update_config_remaining <= 0) {
-			log_message(LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 						"sending hearthbeat from blackboard, watchdog_pid: %d", watchdog_pid);
 			us_update_config_remaining = PERIOD;
 			loadJSONConfig(&blackboard.config);
@@ -112,7 +111,7 @@ int loadJSONConfig(struct Config *const c) {
 
 	file = fopen("appsettings.json", "r");
 
-	log_message(LOG_INFO, PROCESS_NAME, "Opened file");
+	log_message(LOG_INFO, "Opened file");
 
 	if (file == NULL) {
 		perror("Error opening the file");
@@ -123,22 +122,22 @@ int loadJSONConfig(struct Config *const c) {
 	if (!len) {
 		perror("Error reading file");
 	}
-	log_message(LOG_INFO, PROCESS_NAME, "Read file");
+	log_message(LOG_INFO, "Read file");
 
 	cJSON *json = cJSON_Parse(jsonBuffer);
-	log_message(LOG_INFO, PROCESS_NAME, "Parsed json");
+	log_message(LOG_INFO, "Parsed json");
 
 	if (json == NULL) {
 		perror("Error parsing the file");
 		return EXIT_FAILURE;
 	}
 
-	log_message(LOG_INFO, PROCESS_NAME, "No errors in parsing");
+	log_message(LOG_INFO, "No errors in parsing");
 
 	c->n_obstacles =
 		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
 	if (c->n_obstacles < 0 || c->n_obstacles > MAX_OBSTACLES) {
-		log_message(LOG_ERROR, PROCESS_NAME,
+		log_message(LOG_ERROR,
 				"Value specified for numer of obstacles in settings is not"
 				"valid, setting it to %d", MAX_OBSTACLES);
 	}
@@ -146,7 +145,7 @@ int loadJSONConfig(struct Config *const c) {
 	c->n_targets =
 		cJSON_GetObjectItemCaseSensitive(json, "n_targets")->valueint;
 	if (c->n_targets < 0 || c->n_targets > MAX_TARGETS) {
-		log_message(LOG_ERROR, PROCESS_NAME,
+		log_message(LOG_ERROR,
 				"Value specified for numer of targets in settings is not valid,"
 				"setting it to %d", MAX_TARGETS);
 	}
@@ -180,7 +179,7 @@ int loadJSONConfig(struct Config *const c) {
 		cJSON_GetObjectItemCaseSensitive(json, "target_attraction_coeff")
 			->valuedouble;
 
-	log_message(LOG_INFO, PROCESS_NAME, "read values");
+	log_message(LOG_INFO, "read values");
 
 	fclose(file);
 	return true;

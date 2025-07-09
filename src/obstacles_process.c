@@ -19,10 +19,10 @@ int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
 	// time to have the same seed
 	srand(time(NULL) ^ getpid());
-	log_message(LOG_INFO, PROCESS_NAME, "Obstacles running");
+	log_message(LOG_INFO, "Obstacles running");
 
 	if (argc != 4) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Incorrect number of arguments, expected: 4, received: %d",
 					argc);
 		exit(1);
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 			// TODO: should probabily check that the obstacles do not spawn in
 			// the same coordinates as the drone
 			obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
-			log_message(LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 						"generated obstacle with x: %f, y %f",
 						obstacles.obstacles[i].x, obstacles.obstacles[i].y);
 		}

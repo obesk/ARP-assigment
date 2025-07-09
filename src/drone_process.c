@@ -40,10 +40,10 @@ double calculate_drone_position(const double x1, const double x2,
 								const double M, const double K);
 
 int main(int argc, char **argv) {
-	log_message(LOG_INFO, PROCESS_NAME, "Drone running");
+	log_message(LOG_INFO, "Drone running");
 
 	if (argc < 4) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Incorrect number of arguments, expected: 3, received: %d",
 					argc);
 		exit(1);
@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
 
 		const struct Vec2D drone_force = blackboard_get_drone_force(wpfd, rpfd);
 
-		log_message(LOG_INFO, PROCESS_NAME, "drone_force: x %lf, y: %lf",
+		log_message(LOG_INFO, "drone_force: x %lf, y: %lf",
 					drone_force.x, drone_force.y);
 
 		const struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
 
-		log_message(LOG_INFO, PROCESS_NAME, "got drone position");
+		log_message(LOG_INFO, "got drone position");
 
 		// TODO: remove this comments if not used
 		// based on this specific implementation the drone should be the
@@ -120,13 +120,13 @@ int main(int argc, char **argv) {
 			calculate_obstacles_repulsion_force(
 				&obstacles, drone_position, config.max_obstacle_distance,
 				config.min_obstacle_distance, config.obstacle_repulsion_coeff);
-		log_message(LOG_INFO, PROCESS_NAME, "calculated forces");
+		log_message(LOG_INFO, "calculated forces");
 
 		const struct Vec2D total_force =
 			vec2D_sum(drone_force, vec2D_sum(obstacles_force, targets_force));
-		log_message(LOG_INFO, PROCESS_NAME, "summed forces");
+		log_message(LOG_INFO, "summed forces");
 
-		log_message(LOG_INFO, PROCESS_NAME, "total force: x %lf, y: %lf",
+		log_message(LOG_INFO, "total force: x %lf, y: %lf",
 					total_force.x, total_force.y);
 
 		// Latex formula :
@@ -146,8 +146,7 @@ int main(int argc, char **argv) {
 				total_force.y, (float)PERIOD / US_IN_S, config.drone_mass,
 				config.viscous_coefficient)};
 
-		log_message(
-			LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 			"drone position x: %lf, drone position y: %lf, force x: %lf, "
 			"force y: %lf",
 			drone_position.x, drone_position.y, total_force.x, total_force.y);
@@ -163,13 +162,13 @@ int main(int argc, char **argv) {
 		// the targets are in reverse order so that the first target to be
 		// caught is removed easily by decreasing the number
 
-		log_message(LOG_INFO, PROCESS_NAME, "checking if user caught targets");
+		log_message(LOG_INFO, "checking if user caught targets");
 		const double distance_to_targets =
 			vec2D_distance(new_position, targets.targets[targets.n - 1]);
-		log_message(LOG_INFO, PROCESS_NAME, "targets distance calculated");
+		log_message(LOG_INFO, "targets distance calculated");
 
 		if (targets.n && distance_to_targets < config.target_caught_distance) {
-			log_message(LOG_INFO, PROCESS_NAME, "user caught target");
+			log_message(LOG_INFO, "user caught target");
 			struct Targets new_targets = targets;
 			new_targets.n = targets.n - 1;
 			blackboard_set(SECTOR_TARGETS,
@@ -180,7 +179,7 @@ int main(int argc, char **argv) {
 		old_drone_positions[1] = old_drone_positions[0];
 		old_drone_positions[0] = new_position;
 
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 					"sending hearthbeat from drone, watchdog_pid: %d", watchdog_pid);
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_DRONE);
 		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
@@ -198,12 +197,11 @@ struct Vec2D calculate_target_attraction_force(
 	// computing targets attraction force
 	struct Vec2D targets_force = {0};
 
-	log_message(
-		LOG_INFO, PROCESS_NAME,
+	log_message(LOG_INFO,
 		"calculating target attraction force, targets n: %d, target 1: %lf",
 		targets->n, targets->targets[0].x);
 	for (int i = 0; i < targets->n; ++i) {
-		log_message(LOG_INFO, PROCESS_NAME, "target added");
+		log_message(LOG_INFO, "target added");
 		const double target_drone_distance =
 			vec2D_distance(targets->targets[i], drone_position);
 
@@ -216,8 +214,9 @@ struct Vec2D calculate_target_attraction_force(
 			vec2D_scalar_mult(-target_attraction_coeff,
 							  vec2D_diff(drone_position, targets->targets[i])));
 	}
-	log_message(LOG_INFO, PROCESS_NAME,
-				"target attraction force calculated: %lf", targets_force);
+	log_message(LOG_INFO,
+				"target attraction force calculated x: %lf, y: %lf", 
+				targets_force.x, targets_force.y);
 
 	return targets_force;
 }
@@ -273,7 +272,7 @@ struct Vec2D calculate_obstacles_repulsion_force(
 						   min_obstacle_distance, obstacle_repulsion_coeff));
 	}
 
-	log_message(LOG_INFO, PROCESS_NAME,
+	log_message(LOG_INFO,
 				"obstacle repulsion force calculated: %lf",
 				vec2D_modulus(obstacles_force));
 	return obstacles_force;
@@ -286,7 +285,7 @@ double calculate_drone_position(const double x1, const double x2,
 		2 * M * x1 - M * x2 + K * period * x1 + period * period * total_force;
 
 	const double denominator = M + K * period;
-	log_message(LOG_DEBUG, PROCESS_NAME,
+	log_message(LOG_DEBUG,
 				"x1 %lf, x2: %lf, force: %lf, period: %lf, numerator: %lf, "
 				"denominator: %lf, res: %lf",
 				x1, x2, total_force, period, numerator, denominator,

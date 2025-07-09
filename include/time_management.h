@@ -32,13 +32,13 @@ bool wait_for_next_period(long period, const struct timespec start_exec_ts,
 	const long execution_time = ts_diff_us(end_exec_ts, start_exec_ts);
 
 	if (execution_time > period) {
-		log_message(LOG_ERROR, PROCESS_NAME,
+		log_message(LOG_ERROR,
 					"execution time: %ld, has exceeded the period of: %ld",
 					execution_time, period);
 		return false;
 	}
 
-	log_message(LOG_INFO, PROCESS_NAME, "execution time: %ld, period: %ld",
+	log_message(LOG_INFO, "execution time: %ld, period: %ld",
 				execution_time, period);
 	usleep(period - execution_time);
 	return true;
