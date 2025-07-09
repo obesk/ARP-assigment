@@ -64,12 +64,7 @@ int main(int argc, char **argv) {
 
 	int update_config_counter = 0;
 
-	const struct Message config_answer =
-		blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
-
-	struct Config config = message_ok(&config_answer)
-							   ? config_answer.payload.config
-							   : (struct Config){0};
+	struct Config config = blackboard_get_config(wpfd, rpfd);
 
 	while (1) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
@@ -78,34 +73,15 @@ int main(int argc, char **argv) {
 		// blackboard
 		if (++update_config_counter >= PERIODS_CHECK_CONFIG) {
 			update_config_counter = 0;
-			const struct Message config_answer =
-				blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
-			config = message_ok(&config_answer) ? config_answer.payload.config
-												: (struct Config){0};
+			config = blackboard_get_config(wpfd, rpfd);
 		}
 
-		const struct Message drone_force_answer =
-			blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
-
-		// in case of error in retrieveing the data (it should not happen)
-		// 0, 0 force is assumed
-		const struct Vec2D drone_force =
-			message_ok(&drone_force_answer)
-				? drone_force_answer.payload.drone_force
-				: (struct Vec2D){0};
+		const struct Vec2D drone_force = blackboard_get_drone_force(wpfd, rpfd);
 
 		log_message(LOG_INFO, PROCESS_NAME, "drone_force: x %lf, y: %lf",
 					drone_force.x, drone_force.y);
 
-		const struct Message position_answer =
-			blackboard_get(SECTOR_DRONE_POSITION, wpfd, rpfd);
-
-		// in case of error in retrieveing the data (it should not happen)
-		// 0, 0 position is assumed
-		const struct Vec2D drone_position =
-			message_ok(&position_answer)
-				? position_answer.payload.drone_position
-				: (struct Vec2D){0};
+		const struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
 
 		log_message(LOG_INFO, PROCESS_NAME, "got drone position");
 
@@ -130,18 +106,10 @@ int main(int argc, char **argv) {
 		/* } */
 
 		// acquiring targets
-		const struct Message targets_answer =
-			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
-		const struct Targets targets = message_ok(&targets_answer)
-										   ? targets_answer.payload.targets
-										   : (struct Targets){0};
+		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
 
 		// acquiring obstacles
-		const struct Message obstacles_answer =
-			blackboard_get(SECTOR_OBSTACLES, wpfd, rpfd);
-		const struct Obstacles obstacles =
-			message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
-										  : (struct Obstacles){0};
+		const struct Obstacles obstacles = blackboard_get_obstacles(wpfd, rpfd);
 
 		// computing forces
 		const struct Vec2D targets_force = calculate_target_attraction_force(

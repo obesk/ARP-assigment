@@ -1,3 +1,4 @@
+#include "vec2d.h"
 #define PROCESS_NAME "INPUT"
 
 #include "blackboard.h"
@@ -122,15 +123,8 @@ int main(int argc, char **argv) {
 					"user inputted: %c, corresponding direction: %d",
 					user_input, d);
 
-		const struct Message answer =
-			blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
-
-		// in case of error in retrieveing the data (it should not happen)
-		// 0, 0 force is assumed
-		const struct Vec2D curr_force = message_ok(&answer)
-											? answer.payload.drone_force
-											: (struct Vec2D){0};
-
+		const struct Vec2D curr_force = blackboard_get_drone_force(wpfd, rpfd);
+		
 		const struct Vec2D new_force =
 			d != DIR_STOP ? vec2D_sum(curr_force, applied_force)
 						  : (struct Vec2D){0};

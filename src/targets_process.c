@@ -39,18 +39,12 @@ int main(int argc, char **argv) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 
 		// checking the state of the targets to see if they need to be updated
-		const struct Message targets_answer =
-			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
-
-		const struct Targets targets = message_ok(&targets_answer)
-										   ? targets_answer.payload.targets
-										   : (struct Targets){0};
+		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
 
 		int caught_targets = current_target_n - targets.n;
 
 		if (caught_targets) {
-			const struct Message score_answer = blackboard_get(SECTOR_SCORE, wpfd, rpfd);
-			const int score = message_ok(&score_answer) ? score_answer.payload.score : 0;
+			const int score = blackboard_get_score(wpfd, rpfd);
 			const int new_score =  score + caught_targets * 100;
 			blackboard_set(SECTOR_SCORE,
 						   &(union Payload){.score = new_score }, wpfd,
@@ -68,20 +62,12 @@ int main(int argc, char **argv) {
 		
 		// all targets caught, updating score and generating new targets
 
-		const struct Message score_answer =
-			blackboard_get(SECTOR_SCORE, wpfd, rpfd);
-
-		const int score = message_ok(&score_answer) ? targets_answer.payload.score : 0;
+		const int score = blackboard_get_score(wpfd, rpfd);
 		blackboard_set(SECTOR_SCORE,
 					   &(union Payload){.score = score + 1000 }, wpfd,
 					   rpfd);
 
-		const struct Message config_answer =
-			blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
-		struct Config config = message_ok(&config_answer)
-								   ? config_answer.payload.config
-								   : (struct Config){0};
-
+		struct Config config = blackboard_get_config(wpfd, rpfd);
 		struct Targets new_targets = { .n = config.n_targets };
 
 		log_message(LOG_INFO, PROCESS_NAME, "spawning %d targets:", new_targets.n);

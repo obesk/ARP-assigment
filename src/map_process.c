@@ -1,3 +1,4 @@
+#include "target.h"
 #define PROCESS_NAME "MAP"
 
 #include "blackboard.h"
@@ -49,17 +50,8 @@ int main(int argc, char **argv) {
 		// 			"h_m_to_char: %f",
 		// 			win_width, win_height, w_m_to_char, h_m_to_char);
 
-		const struct Message score_answer =
-			blackboard_get(SECTOR_SCORE, wpfd, rpfd);
-		const int score =
-			message_ok(&score_answer) ? score_answer.payload.score : 0;
-
-		const struct Message drone_answer =
-			blackboard_get(SECTOR_DRONE_POSITION, wpfd, rpfd);
-
-		const struct Vec2D drone_position =
-			message_ok(&drone_answer) ? drone_answer.payload.drone_position
-									  : (struct Vec2D){0};
+		const int score = blackboard_get_score(wpfd, rpfd);
+		const struct Vec2D drone_position = blackboard_get_drone_position(wpfd,rpfd);
 
 		const struct Vec2Dint char_drone_position =
 			convert_coordinates(border, drone_position);
@@ -78,18 +70,9 @@ int main(int argc, char **argv) {
 
 		mvwprintw(border, 0, 0, "score: %d", score);
 
-		const struct Message targets_answer =
-			blackboard_get(SECTOR_TARGETS, wpfd, rpfd);
-		const struct Targets targets = message_ok(&targets_answer)
-										   ? targets_answer.payload.targets
-										   : (struct Targets){0};
+		const struct Obstacles obstacles = blackboard_get_obstacles(wpfd, rpfd);
 
-		const struct Message obstacles_answer =
-			blackboard_get(SECTOR_OBSTACLES, wpfd, rpfd);
-		const struct Obstacles obstacles =
-			message_ok(&obstacles_answer) ? obstacles_answer.payload.obstacles
-										  : (struct Obstacles){0};
-
+		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
 		log_message(LOG_INFO, PROCESS_NAME, "targets n: %d", targets.n);
 		for (int i = 0; i < targets.n; ++i) {
 			const struct Vec2Dint t =
