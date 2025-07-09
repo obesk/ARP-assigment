@@ -1,6 +1,8 @@
+#define PROCESS_NAME "BLACKBOARD"
+
 #include "obstacle.h"
 #include "target.h"
-#define PROCESS_NAME "BLACKBOARD"
+#include "watchdog.h"
 
 #include "processes.h"
 #include "time_management.h"
@@ -12,6 +14,7 @@
 
 #include <cjson/cJSON.h>
 
+#define PERIOD process_periods[PROCESS_BLACKBOARD]
 // TODO: this needs to be dimensioned correctly
 #define JSON_MAX_FILE_SIZE 1000
 
@@ -38,8 +41,10 @@ int main(int argc, char **argv) {
 	loadJSONConfig(&blackboard.config);
 
 	log_message(LOG_INFO, PROCESS_NAME, "loaded config");
-
-	const int expected_argc = PROCESS_N * 2 + 1; //+1 for the program name
+	
+	// read and write for each processes
+	// +1 for the program name and +1 for the watchdog pid
+	const int expected_argc = PROCESS_N * 2 + 2; 
 
 	if (argc != expected_argc) {
 		log_message(
@@ -49,12 +54,15 @@ int main(int argc, char **argv) {
 	}
 
 	struct PFDs *pfds = argsToPFDs(&argv[1]);
+	int watchdog_pid = atoi(argv[argc - 1]);
+	log_message(
+		LOG_INFO, PROCESS_NAME,
+		"argc: %d, watchdog_pid: %d",
+		expected_argc, watchdog_pid);
+
 	const int max_fd = getMaxFd(pfds) + 1;
-
 	struct timespec ts_start_exec, ts_end_exec;
-
-	const long us_update_config_period = 500000;
-	long us_update_config_remaining = us_update_config_period;
+	long us_update_config_remaining = PERIOD;
 
 	while (true) {
 		clock_gettime(CLOCK_REALTIME, &ts_start_exec);
@@ -89,8 +97,11 @@ int main(int argc, char **argv) {
 		clock_gettime(CLOCK_REALTIME, &ts_end_exec);
 		us_update_config_remaining -= ts_diff_us(ts_end_exec, ts_start_exec);
 		if (us_update_config_remaining <= 0) {
-			us_update_config_remaining = us_update_config_period;
+			log_message(LOG_INFO, PROCESS_NAME,
+						"sending hearthbeat from blackboard, watchdog_pid: %d", watchdog_pid);
+			us_update_config_remaining = PERIOD;
 			loadJSONConfig(&blackboard.config);
+			watchdog_send_hearthbeat(watchdog_pid, PROCESS_BLACKBOARD);
 		}
 	}
 }
@@ -177,8 +188,6 @@ int loadJSONConfig(struct Config *const c) {
 
 bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 				   int wpfd) {
-
-	log_message(LOG_INFO, PROCESS_NAME, "Blackboard running");
 	struct Message response;
 	response.sector = msg->sector;
 

@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 	// TODO: add error check
 	int rpfd = atoi(argv[1]);
 	int wpfd = atoi(argv[2]);
-	int whatchdog_pid = atoi(argv[3]);
+	int watchdog_pid = atoi(argv[3]);
 
 	// FIXME: this should be set by asking to the blackboard
 	struct Vec2D old_drone_positions[2] = {
@@ -180,9 +180,9 @@ int main(int argc, char **argv) {
 		old_drone_positions[1] = old_drone_positions[0];
 		old_drone_positions[0] = new_position;
 
-		log_message(LOG_INFO, PROCESS_NAME, "sending hearthbeat");
-
-		watchdog_send_hearthbeat(whatchdog_pid, PROCESS_DRONE);
+		log_message(LOG_INFO, PROCESS_NAME,
+					"sending hearthbeat from drone, watchdog_pid: %d", watchdog_pid);
+		watchdog_send_hearthbeat(watchdog_pid, PROCESS_DRONE);
 		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
 		wait_for_next_period(PERIOD, start_exec_ts, end_exec_ts);
 	}
