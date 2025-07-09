@@ -45,12 +45,7 @@ int main(int argc, char **argv) {
 			goto sleep;
 		}
 
-		const struct Message config_answer =
-			blackboard_get(SECTOR_CONFIG, wpfd, rpfd);
-		struct Config config = message_ok(&config_answer)
-								   ? config_answer.payload.config
-								   : (struct Config){0};
-
+		struct Config config = blackboard_get_config(wpfd, rpfd);
 		struct Obstacles obstacles = { .n = config.n_obstacles };
 
 		for (int i = 0; i < obstacles.n; ++i) {
