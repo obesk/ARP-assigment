@@ -37,13 +37,13 @@ bool newPFDs(struct PFDs *const blackboard_pfds,
 		// creating the blackboard struct PFDs to talk to the processes
 		const int res = pipe(to_blackboard_pfds);
 		if (res <= -1) {
-			log_message(LOG_CRITICAL, PROCESS_NAME,
+			log_message(LOG_CRITICAL,
 						"Error while genearating PFD to talk to the process");
 			return false;
 		}
 		blackboard_pfds->read[i] = to_blackboard_pfds[0];
 		processes_pfds->write[i] = to_blackboard_pfds[1];
-		log_message(LOG_DEBUG, PROCESS_NAME,
+		log_message(LOG_DEBUG,
 					"Generated PFD to write to blackboard: read (blackboard): "
 					"%d, write "
 					"(process): %d ",
@@ -52,15 +52,13 @@ bool newPFDs(struct PFDs *const blackboard_pfds,
 		// creating the processes struct PFDs to talk to the blackboard
 		const int res2 = pipe(to_process_pfds);
 		if (res2 <= -1) {
-			log_message(
-				LOG_CRITICAL, PROCESS_NAME,
+			log_message(LOG_CRITICAL,
 				"Error while genearating PFD to talk to the blackboard");
 			return NULL;
 		}
 		processes_pfds->read[i] = to_process_pfds[0];
 		blackboard_pfds->write[i] = to_process_pfds[1];
-		log_message(
-			LOG_DEBUG, PROCESS_NAME,
+		log_message(LOG_DEBUG,
 			"Generated PFD to write to process: read (process): %d, write "
 			"(blackboard): %d ",
 			to_process_pfds[0], to_process_pfds[1]);
@@ -81,7 +79,7 @@ struct PFDs *argsToPFDs(char **argv) {
 	int *p = (int *)pfds;
 	for (int i = 0; i < PROCESS_N * 2; ++i) {
 		*p = atoi(argv[i]);
-		log_message(LOG_DEBUG, PROCESS_NAME, "Parsed FD[%d]: %d", i, *p);
+		log_message(LOG_DEBUG, "Parsed FD[%d]: %d", i, *p);
 		++p;
 	}
 	return pfds;

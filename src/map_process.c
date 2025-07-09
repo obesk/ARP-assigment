@@ -22,10 +22,10 @@ struct Vec2Dint convert_coordinates(const WINDOW *win, struct Vec2D coord);
 
 int main(int argc, char **argv) {
 
-	log_message(LOG_INFO, PROCESS_NAME, "Map running");
+	log_message(LOG_INFO, "Map running");
 
 	if (argc < 4) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Incorrect number of arguments, expected: 4, received: %d",
 					argc);
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 		const struct Vec2Dint char_drone_position =
 			convert_coordinates(border, drone_position);
 
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 					"drone x: %lf, drone x char: %d, drone y : %lf, drone y "
 					"char : %d ",
 					drone_position.x, char_drone_position.x, drone_position.y,
@@ -73,12 +73,11 @@ int main(int argc, char **argv) {
 		const struct Obstacles obstacles = blackboard_get_obstacles(wpfd, rpfd);
 
 		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
-		log_message(LOG_INFO, PROCESS_NAME, "targets n: %d", targets.n);
+		log_message(LOG_INFO, "targets n: %d", targets.n);
 		for (int i = 0; i < targets.n; ++i) {
 			const struct Vec2Dint t =
 				convert_coordinates(border, targets.targets[i]);
-			log_message(
-				LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 				"target %d x: %lf, target x char: %d, target y : %lf, target y "
 				"char : %d ",
 				i, targets.targets[i].x, t.x, targets.targets[i].y, t.y);
@@ -88,7 +87,7 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < obstacles.n; ++i) {
 			const struct Vec2Dint o =
 				convert_coordinates(border, obstacles.obstacles[i]);
-			log_message(LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 						"obstacle %d x: %lf, obstacle x char: %d, obstacle y : "
 						"%lf, obstacle y "
 						"char : %d ",

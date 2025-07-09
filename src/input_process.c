@@ -32,10 +32,10 @@ void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int row, int col);
 void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]);
 
 int main(int argc, char **argv) {
-	log_message(LOG_INFO, PROCESS_NAME, "Input running");
+	log_message(LOG_INFO, "Input running");
 
 	if (argc < 4) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Incorrect number of arguments, expected: 3, received: %d",
 					argc);
 		exit(1);
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 		memset(btn_highlights, 0, sizeof(bool) * DIR_N);
 
 		if (user_input == 'p') {
-			log_message(LOG_WARN, PROCESS_NAME,
+			log_message(LOG_WARN,
 						"used asked to exit with input %c, exiting ....",
 						user_input);
 			break;
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
 		// checking user inputted a key corresponding with a valid direction
 		if ((int)d < 0) {
-			log_message(LOG_WARN, PROCESS_NAME,
+			log_message(LOG_WARN,
 						"Invalid direction inputted, key: %c, direction %d",
 						user_input, d);
 			goto draw;
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 
 		const struct Vec2D applied_force = direction_forces[d];
 
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 					"user inputted: %c, corresponding direction: %d",
 					user_input, d);
 
@@ -171,7 +171,7 @@ void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int start_row,
 		const int col = start_col + ((i % 3) * BTN_COL_DIST);
 		btn_wins[i] = newwin(BTN_HEIGHT, BTN_WIDTH, row, col);
 		if (!btn_wins[i]) {
-			log_message(LOG_CRITICAL, PROCESS_NAME,
+			log_message(LOG_CRITICAL,
 						"newwin() failed for index %d", i);
 			endwin();
 			exit(1);

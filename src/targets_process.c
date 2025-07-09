@@ -18,10 +18,10 @@ int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
 	// time to have the same seed
 	srand(time(NULL) ^ getpid());
-	log_message(LOG_INFO, PROCESS_NAME, "Targets running");
+	log_message(LOG_INFO, "Targets running");
 
 	if (argc < 4) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Incorrect number of arguments, expected: 4, received: %d",
 					argc);
 		exit(1);
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 			blackboard_set(SECTOR_SCORE,
 						   &(union Payload){.score = new_score }, wpfd,
 						   rpfd);
-			log_message(LOG_INFO, PROCESS_NAME, "updating the score on the"
+			log_message(LOG_INFO, "updating the score on the"
 					"blackboard, after detecting target caught, score: %d:,"
 					"initial_score: %d, caught: %d", new_score, score,
 					caught_targets);
@@ -70,13 +70,13 @@ int main(int argc, char **argv) {
 		struct Config config = blackboard_get_config(wpfd, rpfd);
 		struct Targets new_targets = { .n = config.n_targets };
 
-		log_message(LOG_INFO, PROCESS_NAME, "spawning %d targets:", new_targets.n);
+		log_message(LOG_INFO, "spawning %d targets:", new_targets.n);
 
 		for (int i = 0; i < new_targets.n; ++i) {
 			// TODO: should probabily check that the targets do not spawn in the
 			// same coordinates as the drone
 			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
-			log_message(LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 						"generated target with x: %f, y %f",
 						new_targets.targets[i].x, new_targets.targets[i].y);
 		}

@@ -33,7 +33,7 @@ bool register_hearthbeat(struct hearthbeat hearthbeats[WATCHED_PROCESSES],
 bool kill_all_processes(struct hearthbeat hearthbeats[WATCHED_PROCESSES]);
 
 int main(void) {
-	log_message(LOG_INFO, PROCESS_NAME, "Watchdog running");
+	log_message(LOG_INFO, "Watchdog running");
 
 	// the max period of the processes found to determine the maximum
 	// registration time in which all processes should have sent at least an
@@ -60,7 +60,7 @@ int main(void) {
 	usleep(5 * US_IN_S);
 
 	// clearing the signal queue before starting the registration process
-	log_message(LOG_INFO, PROCESS_NAME,
+	log_message(LOG_INFO,
 				"clearing signals queue before process registration");
 
 	while (sigtimedwait(&mask, NULL, &(struct timespec){0}) > 0)
@@ -70,19 +70,18 @@ int main(void) {
 
 	struct timespec start_time_ts;
 	clock_gettime(CLOCK_REALTIME, &start_time_ts);
-	log_message(LOG_INFO, PROCESS_NAME, "starting process registration phase");
+	log_message(LOG_INFO, "starting process registration phase");
 
 	// waiting for all processes to "register"
 	while (wait_time_us > 0) {
-		log_message(LOG_DEBUG, PROCESS_NAME,
-					"%d us to go for registration phase to finish",
+		log_message(LOG_DEBUG,
+					"%ld us to go for registration phase to finish",
 					wait_time_us);
 
 		const struct timespec wait_time_ts = us_to_ts(wait_time_us);
 
-		log_message(
-			LOG_DEBUG, PROCESS_NAME,
-			"waiting for the signals for maximum %d seconds, %d nanoseconds",
+		log_message(LOG_DEBUG,
+			"waiting for the signals for maximum %ld seconds, %ld nanoseconds",
 			wait_time_ts.tv_sec, wait_time_ts.tv_nsec);
 
 		int ret = sigtimedwait(&mask, &info, &wait_time_ts);
@@ -99,15 +98,14 @@ int main(void) {
 		start_time_ts = end_time_ts;
 	}
 
-	log_message(LOG_INFO, PROCESS_NAME,
+	log_message(LOG_INFO,
 				"finished process registration phase, starting process "
 				"monitoring phase");
 
 	// check that all processes have correctly registered
 	for (int i = 0; i < WATCHED_PROCESSES; ++i) {
 		if (!hearthbeats[i].pid) {
-			log_message(
-				LOG_CRITICAL, PROCESS_NAME,
+			log_message(LOG_CRITICAL,
 				"process %d did not manage to register correctly, exiting...",
 				i);
 			kill_all_processes(hearthbeats);
@@ -136,7 +134,7 @@ int main(void) {
 		time_from_next_sampling_us -= ts_diff_us(end_time_ts, start_time_ts);
 		start_time_ts = end_time_ts;
 
-		log_message(LOG_DEBUG, PROCESS_NAME, "time from next sampling %d",
+		log_message(LOG_DEBUG, "time from next sampling %ld",
 					time_from_next_sampling_us);
 
 		if (time_from_next_sampling_us > 0) {
@@ -145,23 +143,22 @@ int main(void) {
 
 		time_from_next_sampling_us = min_period;
 
-		log_message(LOG_INFO, PROCESS_NAME, "starting check for dead processes",
-					time_from_next_sampling_us);
+		log_message(LOG_INFO, "starting check for dead processes");
 
 		// checking if some processes are dead
 		for (int i = 0; i < WATCHED_PROCESSES; ++i) {
 			const long elapsed_time_from_hearthbeat =
 				ts_diff_us(end_time_ts, hearthbeats[i].ts);
 
-			log_message(LOG_INFO, PROCESS_NAME,
-						"elapsed time from hearthbeat for process %d: %d", i,
+			log_message(LOG_INFO,
+						"elapsed time from hearthbeat for process %d: %ld", i,
 						elapsed_time_from_hearthbeat);
 
 			if (elapsed_time_from_hearthbeat >
 				process_periods[i] * WAIT_FACTOR) {
-				log_message(LOG_CRITICAL, PROCESS_NAME,
+				log_message(LOG_CRITICAL,
 							"process %d with pid %d has not managed to send a "
-							"hearthbeat in the allowed time %d, exiting",
+							"hearthbeat in the allowed time %ld, exiting",
 							i, hearthbeats[i].pid,
 							process_periods[i] * WAIT_FACTOR);
 				kill_all_processes(hearthbeats);
@@ -169,7 +166,7 @@ int main(void) {
 			}
 		}
 
-		log_message(LOG_INFO, PROCESS_NAME, "no dead processes found");
+		log_message(LOG_INFO, "no dead processes found");
 	}
 	return 0;
 }
@@ -177,7 +174,7 @@ int main(void) {
 bool register_hearthbeat(struct hearthbeat hearthbeats[WATCHED_PROCESSES],
 						 const siginfo_t *info) {
 	if (info->si_signo != WATCHDOG_HEARTBEAT) {
-		log_message(LOG_WARN, PROCESS_NAME,
+		log_message(LOG_WARN,
 					"invalid signal code received: %d from process with pid: "
 					"%d, this should not happen, the watchdog should only "
 					"receive signals with this code: %d",
@@ -187,8 +184,7 @@ bool register_hearthbeat(struct hearthbeat hearthbeats[WATCHED_PROCESSES],
 
 	const enum Processes sender_process = info->si_int;
 	if (sender_process < 0 || sender_process >= WATCHED_PROCESSES) {
-		log_message(
-			LOG_ERROR, PROCESS_NAME,
+		log_message(LOG_ERROR,
 			"received a signal from a process with an invalid number: %d",
 			sender_process);
 		return false;
@@ -196,7 +192,7 @@ bool register_hearthbeat(struct hearthbeat hearthbeats[WATCHED_PROCESSES],
 
 	if (hearthbeats[sender_process].pid &&
 		hearthbeats[sender_process].pid != info->si_pid) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"a process with pid: %d, tried to impersonate the process "
 					"with number: %d, already registered with pid: %d",
 					info->si_pid, sender_process,

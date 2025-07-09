@@ -21,8 +21,7 @@ bool watchdog_send_hearthbeat(const pid_t watchdog_pid,
 	const int ret = sigqueue(watchdog_pid, WATCHDOG_HEARTBEAT, value);
 
 	if (ret) {
-		log_message(LOG_WARN, PROCESS_NAME,
-					"error sending hearthbeat, ret value: %d", ret);
+		log_message(LOG_WARN, "error sending hearthbeat, ret value: %d", ret);
 	}
 
 	return ret == 0;

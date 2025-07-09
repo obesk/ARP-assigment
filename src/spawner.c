@@ -26,14 +26,14 @@ int main(void) {
 	const char *watchdog_executable = "./bin/watchdog";
 	const char *blackboard_executable = "./bin/blackboard";
 
-	log_message(LOG_INFO, PROCESS_NAME, "spawner process starting");
+	log_message(LOG_INFO, "spawner process starting");
 
 	struct PFDs blackboard_pfds, processes_pfds;
 
 	const bool result = newPFDs(&blackboard_pfds, &processes_pfds);
 
 	if (!result) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Error while initializing struct PFDs");
 		exit(1);
 	}
@@ -44,13 +44,13 @@ int main(void) {
 	// spawning the watchdog
 	const pid_t watchdog_pid = fork();
 	if (watchdog_pid < 0) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Error while creating the watchdog process: %s",
 					watchdog_executable);
 		exit(1);
 	}
 	if (watchdog_pid == 0) {
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 					"Created watchdog child process with executable: %s",
 					watchdog_executable);
 		closeAllPFDs(&processes_pfds);
@@ -62,13 +62,13 @@ int main(void) {
 	// spawning the blackboard
 	const pid_t blackboard_pid = fork();
 	if (blackboard_pid < 0) {
-		log_message(LOG_CRITICAL, PROCESS_NAME,
+		log_message(LOG_CRITICAL,
 					"Error while creating blackboard child process: %s",
 					blackboard_executable);
 		exit(1);
 	}
 	if (blackboard_pid == 0) {
-		log_message(LOG_INFO, PROCESS_NAME,
+		log_message(LOG_INFO,
 					"Created blackboard child process with executable: %s",
 					blackboard_executable);
 
@@ -100,13 +100,13 @@ int main(void) {
 	for (int i = 0; i < PROCESS_N; ++i) {
 		pid_t pid = fork();
 		if (pid < 0) {
-			log_message(LOG_CRITICAL, PROCESS_NAME,
+			log_message(LOG_CRITICAL,
 						"Error while creating child process: %s",
 						executables[i]);
 			exit(1);
 		}
 		if (pid == 0) {
-			log_message(LOG_INFO, PROCESS_NAME,
+			log_message(LOG_INFO,
 						"Created child process with executable: %s",
 						executables[i]);
 			// (2 optional for the konsole spawn) + 1 for the program name + 2 for
