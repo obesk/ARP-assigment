@@ -53,6 +53,8 @@ int main(void) {
 		log_message(LOG_INFO, PROCESS_NAME,
 					"Created watchdog child process with executable: %s",
 					watchdog_executable);
+		closeAllPFDs(&processes_pfds);
+		closeAllPFDs(&blackboard_pfds);
 		execl(watchdog_executable, watchdog_executable, NULL);
 		return 0;
 	}
@@ -87,6 +89,7 @@ int main(void) {
 
 		//since the malloc is done after the fork there is not need to free the
 		//memory since it's reclaimed by the execev
+		closeAllPFDs(&processes_pfds);
 		execv(blackboard_executable, args);
 		return 0;
 	}
@@ -104,7 +107,6 @@ int main(void) {
 			log_message(LOG_INFO, PROCESS_NAME,
 						"Created child process with executable: %s",
 						executables[i]);
-
 			// (2 optional for the konsole spawn) + 1 for the program name + 2 for
 			// the pfds +1 for the watchdog pid + 1 for the NULL required by execv
 			const int n_args = 5 + (2 * spawn_in_konsole[i]);
@@ -136,18 +138,17 @@ int main(void) {
 			snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
 
 			args[args_count++] = NULL;
+
 			// closing all unused pfds ends
-			// FIXME: it may be a good idea to close unused pipes currently this
-			// instruction cause problems, check before uncommenting
-			// closeAllPFDs(&blackboard_pfds);
-			// for (int j = 0; j < PROCESS_N; ++j) {
-			// 	// keeping open only the pfds needed by the process
-			// 	if (i == j) {
-			// 		continue;
-			// 	}
-			// 	close(processes_pfds.read[j]);
-			// 	close(processes_pfds.write[j]);
-			// }
+			closeAllPFDs(&blackboard_pfds);
+			for (int j = 0; j < PROCESS_N; ++j) {
+				// keeping open only the pfds needed by the process
+				if (i == j) {
+					continue;
+				}
+				close(processes_pfds.read[j]);
+				close(processes_pfds.write[j]);
+			}
 			execv(args[0], args);
 		}
 	}
