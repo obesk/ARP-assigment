@@ -3,7 +3,6 @@
 
 #include "vec2d.h"
 
-// TODO: these values probably needs to be changed to something more tought out
 #define MAX_OBSTACLES 20
 
 struct Obstacles {

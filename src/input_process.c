@@ -41,11 +41,10 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	// TODO: add error check
-	int rpfd = atoi(argv[1]);
-	int wpfd = atoi(argv[2]);
-	const pid_t watchdog_pid = atoi(argv[3]);
-
+	int rpfd, wpfd, watchdog_pid; 
+	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
+		exit(1);
+	}
 	keys_direction_init();
 
 	// this array translates the input direction to forces applied to the drone

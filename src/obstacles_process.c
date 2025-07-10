@@ -16,6 +16,11 @@
 #define OBSTACLE_UPDATE_TIME 100000000
 
 int main(int argc, char **argv) {
+	int rpfd, wpfd, watchdog_pid;
+	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
+		exit(1);
+	}
+
 	// this is to prevent the other processes which can be spawned at the same
 	// time to have the same seed
 	srand(time(NULL) ^ getpid());
@@ -27,11 +32,6 @@ int main(int argc, char **argv) {
 					argc);
 		exit(1);
 	}
-
-	// TODO: add error check
-	int rpfd = atoi(argv[1]);
-	int wpfd = atoi(argv[2]);
-	int watchdog_pid = atoi(argv[3]);
 
 	const int obstacle_update_cycles = OBSTACLE_UPDATE_TIME / PERIOD;
 	int cycles = 0;
@@ -46,14 +46,25 @@ int main(int argc, char **argv) {
 		}
 
 		struct Config config = blackboard_get_config(wpfd, rpfd);
-		struct Obstacles obstacles = { .n = config.n_obstacles };
+		struct Obstacles obstacles = {.n = config.n_obstacles};
 
+		struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
 		for (int i = 0; i < obstacles.n; ++i) {
-			// TODO: should probabily check that the obstacles do not spawn in
-			// the same coordinates as the drone
-			obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
-			log_message(LOG_INFO,
-						"generated obstacle with x: %f, y %f",
+			bool unique_position;
+			do {
+				unique_position = true;
+				obstacles.obstacles[i] = vec2D_random(0, GEOFENCE);
+				for (int j = 0; j < i; ++j) {
+					if (vec2D_equals(obstacles.obstacles[j],
+									 obstacles.obstacles[i])) {
+						unique_position = false;
+					}
+				}
+				unique_position &=
+					!vec2D_equals(obstacles.obstacles[i], drone_position);
+			} while (!unique_position);
+
+			log_message(LOG_INFO, "generated obstacle with x: %f, y %f",
 						obstacles.obstacles[i].x, obstacles.obstacles[i].y);
 		}
 

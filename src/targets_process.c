@@ -1,3 +1,4 @@
+#include "vec2d.h"
 #define PROCESS_NAME "TARGETS"
 
 #include "blackboard.h"
@@ -27,11 +28,11 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	// TODO: add error check
-	int rpfd = atoi(argv[1]);
-	int wpfd = atoi(argv[2]);
-	int watchdog_pid = atoi(argv[3]);
-
+	int rpfd, wpfd, watchdog_pid; 
+	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
+		exit(1);
+	}
+	
 	int current_target_n = 0;
 
 	struct timespec start_exec_ts, end_exec_ts;
@@ -70,12 +71,25 @@ int main(int argc, char **argv) {
 		struct Config config = blackboard_get_config(wpfd, rpfd);
 		struct Targets new_targets = { .n = config.n_targets };
 
+		struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
+
 		log_message(LOG_INFO, "spawning %d targets:", new_targets.n);
 
 		for (int i = 0; i < new_targets.n; ++i) {
-			// TODO: should probabily check that the targets do not spawn in the
-			// same coordinates as the drone
-			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
+			// making shure that the targets are not spawned in the drone position
+			// or in the position of other obstacles
+			bool unique_position;
+			do {
+				unique_position = true;
+				new_targets.targets[i] = vec2D_random(0, GEOFENCE);
+				for (int j = 0; j < i; ++j) { 
+					if (vec2D_equals(targets.targets[j], new_targets.targets[i])) {
+						unique_position = false; 
+					}
+				}
+				unique_position &= !vec2D_equals(targets.targets[i], drone_position);
+			} while(!unique_position);
+
 			log_message(LOG_INFO,
 						"generated target with x: %f, y %f",
 						new_targets.targets[i].x, new_targets.targets[i].y);

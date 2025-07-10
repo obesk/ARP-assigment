@@ -34,16 +34,15 @@ int main(int argc, char **argv) {
 
 	init_screen();
 
-	// TODO: add error check
-	int rpfd = atoi(argv[1]);
-	int wpfd = atoi(argv[2]);
-	const pid_t watchdog_pid = atoi(argv[3]);
+	int rpfd, wpfd, watchdog_pid; 
+	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
+		exit(1);
+	}
 
 	WINDOW *border = newwin(0, 0, 0, 0);
 	struct timespec start_exec_ts, end_exec_ts;
 	while (1) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
-		// TODO: should probably be done only on resize
 
 		// log_message(LOG_INFO, PROCESS_NAME,
 		// 			"win_width: %d, win_height: %d, w_m_to_char: %f, "

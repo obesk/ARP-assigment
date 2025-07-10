@@ -21,9 +21,6 @@ struct PFDs {
 	int write[PROCESS_N]; // fds to send data to the processes
 };
 
-// TODO: fixed process name on logs
-// TODO: switch from pointer return to return parameter
-
 bool newPFDs(struct PFDs *const blackboard_pfds,
 			 struct PFDs *const processes_pfds) {
 	if (!blackboard_pfds || !processes_pfds) {
