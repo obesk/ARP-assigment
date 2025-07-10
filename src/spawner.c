@@ -1,9 +1,10 @@
+#define PROCESS_NAME "SPAWNER"
+
 #include "processes.h"
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-#define PROCESS_NAME "SPAWNER"
 #define MAX_SIZE_PNAME = 50;
 
 #include "logging.h"
@@ -115,9 +116,6 @@ int main(void) {
 
 			char **args = malloc((sizeof(char *) * n_args));
 
-			// FIXME: by passing the already allocated pointer to PFDsToArgs it
-			// should be possible to do the following operations in the function
-			// or just manage the konsole option from it
 			int args_count = 0;
 
 			if (spawn_in_konsole[i]) {

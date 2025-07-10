@@ -14,16 +14,6 @@
 
 #define PERIOD process_periods[PROCESS_DRONE]
 
-/* #define MAX_OBSTACLE_DISTANCE 2 */
-// TODO: consider the possibility of using 1 char distance
-/* #define MIN_OBSTACLE_DISTANCE 1 */
-/* #define MAX_TARGET_DISTANCE 3.0 */
-/* #define TARGET_CAUGHT_DISTANCE 1.0 */
-
-// TODO: this needs to be decreased probably
-/* #define TARGET_ATTRACTION_COEFF 1.0 */
-/* #define OBSTACLE_REPULSION_COEFF 50.0 */
-
 #define PERIODS_CHECK_CONFIG 10
 
 struct Vec2D calculate_target_attraction_force(
@@ -49,10 +39,10 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	// TODO: add error check
-	int rpfd = atoi(argv[1]);
-	int wpfd = atoi(argv[2]);
-	int watchdog_pid = atoi(argv[3]);
+	int rpfd, wpfd, watchdog_pid; 
+	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
+		exit(1);
+	}
 
 	// FIXME: this should be set by asking to the blackboard
 	struct Vec2D old_drone_positions[2] = {
@@ -85,26 +75,6 @@ int main(int argc, char **argv) {
 
 		log_message(LOG_INFO, "got drone position");
 
-		// TODO: remove this comments if not used
-		// based on this specific implementation the drone should be the
-		// only one to update it's position so the position reading is
-		// unecessary, it's still better to include the case of it getting
-		// updated by another process. In this case we shift the old
-		// position so that we consider the last read position as the last
-		// position
-		/* long time_passed = PERIOD; // FIXME: put clock here */
-		/* if (!vec2D_equals(old_drone_positions[0], drone_position)) { */
-		/* 	old_drone_positions[1] = old_drone_positions[0]; */
-		/* 	old_drone_positions[0] = drone_position; */
-
-		// TODO: remove this comments if not used
-		// TODO: here we are assuming that the position got updated in
-		// the middle of this process period to get a proper value it
-		// would be necessary to add the update time of the position
-		/* 	old_time_passed = time_passed / 2; */
-		/* 	time_passed /= 2; */
-		/* } */
-
 		// acquiring targets
 		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
 
@@ -134,7 +104,6 @@ int main(int argc, char **argv) {
 		// T_i \sum F_{x_i}}{M + K T_{i-1}} this formula accounts for the
 		// two times beign slightly differnt between the 3 sample data
 
-		// TODO: border force missing
 		struct Vec2D new_position = {
 			.x = calculate_drone_position(
 				old_drone_positions[0].x, old_drone_positions[1].x,
