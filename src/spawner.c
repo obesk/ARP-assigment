@@ -34,8 +34,7 @@ int main(void) {
 	const bool result = newPFDs(&blackboard_pfds, &processes_pfds);
 
 	if (!result) {
-		log_message(LOG_CRITICAL,
-					"Error while initializing struct PFDs");
+		log_message(LOG_CRITICAL, "Error while initializing struct PFDs");
 		exit(1);
 	}
 
@@ -74,15 +73,16 @@ int main(void) {
 					blackboard_executable);
 
 		// creating the args for the blackboard
-		// since the process gets substituted there is 2
-		const int n_args_blackboard = (PROCESS_N * 2 + 2);
+		const int n_args_pfds = PROCESS_N * 2;
+		// +1 for the watchdog, +1 for the NULL at the end
+		const int n_args_blackboard = n_args_pfds + 2;
 		int args_count = 0;
 		char **args = malloc(sizeof(char *) * n_args_blackboard);
 		args[args_count] = malloc(strlen(blackboard_executable) + 1);
 		strcpy(args[args_count++], blackboard_executable);
 		// pointer arithmetic is used to index both read and write pfds
 		int *p = (int *)&blackboard_pfds;
-		for (int i = 0; i < n_args_blackboard; ++i) {
+		for (int i = 0; i < n_args_pfds; ++i) {
 			args[args_count] = malloc(INT_STR_LEN);
 			snprintf(args[args_count++], INT_STR_LEN, "%d", *(p++));
 		}
@@ -90,8 +90,8 @@ int main(void) {
 		snprintf(args[args_count++], INT_STR_LEN, "%d", watchdog_pid);
 		args[args_count++] = NULL; // setting the last element to NULL for execv
 
-		//since the malloc is done after the fork there is not need to free the
-		//memory since it's reclaimed by the execev
+		// since the malloc is done after the fork there is not need to free the
+		// memory since it's reclaimed by the execev
 		closeAllPFDs(&processes_pfds);
 		execv(blackboard_executable, args);
 		return 0;
@@ -101,17 +101,16 @@ int main(void) {
 	for (int i = 0; i < PROCESS_N; ++i) {
 		pid_t pid = fork();
 		if (pid < 0) {
-			log_message(LOG_CRITICAL,
-						"Error while creating child process: %s",
+			log_message(LOG_CRITICAL, "Error while creating child process: %s",
 						executables[i]);
 			exit(1);
 		}
 		if (pid == 0) {
-			log_message(LOG_INFO,
-						"Created child process with executable: %s",
+			log_message(LOG_INFO, "Created child process with executable: %s",
 						executables[i]);
-			// (2 optional for the konsole spawn) + 1 for the program name + 2 for
-			// the pfds +1 for the watchdog pid + 1 for the NULL required by execv
+			// (2 optional for the konsole spawn) + 1 for the program name + 2
+			// for the pfds +1 for the watchdog pid + 1 for the NULL required by
+			// execv
 			const int n_args = 5 + (2 * spawn_in_konsole[i]);
 
 			char **args = malloc((sizeof(char *) * n_args));
@@ -130,7 +129,8 @@ int main(void) {
 			// converting the processes file descriptors and copying them on the
 			// args
 			args[args_count] = malloc(INT_STR_LEN);
-			snprintf(args[args_count++], INT_STR_LEN, "%d", processes_pfds.read[i]);
+			snprintf(args[args_count++], INT_STR_LEN, "%d",
+					 processes_pfds.read[i]);
 			args[args_count] = malloc(INT_STR_LEN);
 			snprintf(args[args_count++], INT_STR_LEN, "%d",
 					 processes_pfds.write[i]);
