@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 	int watchdog_pid = atoi(argv[argc - 1]);
 	log_message(LOG_INFO,
 		"argc: %d, watchdog_pid: %d",
-		expected_argc, watchdog_pid);
+		argc, watchdog_pid);
 
 	const int max_fd = getMaxFd(pfds) + 1;
 	struct timespec ts_start_exec, ts_end_exec;
