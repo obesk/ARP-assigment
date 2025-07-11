@@ -1,6 +1,6 @@
-#include "vec2d.h"
 #define PROCESS_NAME "TARGETS"
 
+#include "vec2d.h"
 #include "blackboard.h"
 #include "logging.h"
 #include "processes.h"
@@ -14,6 +14,8 @@
 #include <unistd.h>
 
 #define PERIOD process_periods[PROCESS_TARGETS]
+
+int spawn_targets(int rpfd, int wpfd);
 
 int main(int argc, char **argv) {
 	// this is to prevent the other processes which can be spawned at the same
@@ -33,7 +35,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	int current_target_n = 0;
+	int current_target_n = spawn_targets(rpfd, wpfd);
 
 	struct timespec start_exec_ts, end_exec_ts;
 	while (true) {
@@ -67,37 +69,7 @@ int main(int argc, char **argv) {
 		blackboard_set(SECTOR_SCORE,
 					   &(union Payload){.score = score + 1000 }, wpfd,
 					   rpfd);
-
-		struct Config config = blackboard_get_config(wpfd, rpfd);
-		struct Targets new_targets = { .n = config.n_targets };
-
-		struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
-
-		log_message(LOG_INFO, "spawning %d targets:", new_targets.n);
-
-		for (int i = 0; i < new_targets.n; ++i) {
-			// making shure that the targets are not spawned in the drone position
-			// or in the position of other obstacles
-			bool unique_position;
-			do {
-				unique_position = true;
-				new_targets.targets[i] = vec2D_random(0, GEOFENCE);
-				for (int j = 0; j < i; ++j) { 
-					if (vec2D_equals(targets.targets[j], new_targets.targets[i])) {
-						unique_position = false; 
-					}
-				}
-				unique_position &= !vec2D_equals(targets.targets[i], drone_position);
-			} while(!unique_position);
-
-			log_message(LOG_INFO,
-						"generated target with x: %f, y %f",
-						new_targets.targets[i].x, new_targets.targets[i].y);
-		}
-
-		current_target_n = new_targets.n;
-		blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
-					   wpfd, rpfd);
+		current_target_n = spawn_targets(rpfd,wpfd);
 
 	sleep:
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_TARGETS);
@@ -108,4 +80,37 @@ int main(int argc, char **argv) {
 	close(wpfd);
 
 	return 0;
+}
+
+int spawn_targets(int rpfd, int wpfd) {
+	struct Config config = blackboard_get_config(wpfd, rpfd);
+	struct Targets new_targets = { .n = config.n_targets };
+
+	struct Vec2D drone_position = blackboard_get_drone_position(wpfd, rpfd);
+
+	log_message(LOG_INFO, "spawning %d targets:", new_targets.n);
+
+	for (int i = 0; i < new_targets.n; ++i) {
+		// making shure that the targets are not spawned in the drone position
+		// or in the position of other obstacles
+		bool unique_position;
+		do {
+			unique_position = true;
+			new_targets.targets[i] = vec2D_random(0, GEOFENCE);
+			for (int j = 0; j < i; ++j) {
+				if (vec2D_equals(new_targets.targets[j], new_targets.targets[i])) {
+					unique_position = false;
+				}
+			}
+			unique_position &= !vec2D_equals(new_targets.targets[i], drone_position);
+		} while(!unique_position);
+
+		log_message(LOG_INFO,
+					"generated target with x: %f, y %f",
+					new_targets.targets[i].x, new_targets.targets[i].y);
+	}
+
+	blackboard_set(SECTOR_TARGETS, &(union Payload){.targets = new_targets},
+				   wpfd, rpfd);
+	return new_targets.n;
 }
