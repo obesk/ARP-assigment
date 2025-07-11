@@ -44,11 +44,6 @@ int main(int argc, char **argv) {
 	while (1) {
 		clock_gettime(CLOCK_REALTIME, &start_exec_ts);
 
-		// log_message(LOG_INFO, PROCESS_NAME,
-		// 			"win_width: %d, win_height: %d, w_m_to_char: %f, "
-		// 			"h_m_to_char: %f",
-		// 			win_width, win_height, w_m_to_char, h_m_to_char);
-
 		const int score = blackboard_get_score(wpfd, rpfd);
 		const struct Vec2D drone_position = blackboard_get_drone_position(wpfd,rpfd);
 
