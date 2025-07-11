@@ -30,6 +30,9 @@
 #define BTN_WIN_HEIGHT (BTN_ROW_DIST * (BTN_COLS_N - 1) + BTN_WIDTH + 2)
 #define BTN_WIN_WITDTH (BTN_COL_DIST * (BTN_ROWS_N - 1) + BTN_HEIGHT + 2)
 
+#define DATA_WIN_HEIGHT BTN_WIN_HEIGHT
+#define DATA_WIN_WIDTH 50
+
 #define PERIOD process_periods[PROCESS_INPUT]
 
 struct ButtonWindow {
@@ -39,7 +42,9 @@ struct ButtonWindow {
 
 void init_screen(void);
 void initialize_btn_windows(struct ButtonWindow *btn_win);
+void initialize_data_window(WINDOW **win);
 void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]);
+void draw_data(WINDOW *data_win);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Input running");
@@ -86,12 +91,14 @@ int main(int argc, char **argv) {
 			},
 	};
 
-	struct ButtonWindow btn_win = { 0 };
-
 	bool btn_highlights[DIR_N];
+
+	struct ButtonWindow btn_win;
+	WINDOW *data_win;
 
 	init_screen();
 	initialize_btn_windows(&btn_win);
+	initialize_data_window(&data_win);
 
 	char user_input;
 
@@ -144,7 +151,14 @@ int main(int argc, char **argv) {
 		blackboard_set(SECTOR_DRONE_FORCE, &payload, wpfd, rpfd);
 
 	draw:
+		;
 		// drawing
+		const struct Vec2D curr_drone_force = 
+			blackboard_get_drone_actual_force(wpfd, rpfd);
+		box(data_win, 0, 0);
+		mvwprintw(data_win, 1, 1, "FORCE X: %lf", curr_drone_force.x);
+		mvwprintw(data_win, 2, 1, "FORCE Y: %lf", curr_drone_force.y);
+		wrefresh(data_win);
 		draw_buttons(&btn_win, btn_highlights);
 		refresh();
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_INPUT);
@@ -182,6 +196,7 @@ void initialize_btn_windows(struct ButtonWindow *btn_win) {
 		exit(1);
 	}
 	for (int i = 0; i < DIR_N; i++) {
+		// TODO: is this +1 ok ?
 		const int row = 2 + (i / 3) * BTN_ROW_DIST;
 		const int col = 2 + (i % 3) * BTN_COL_DIST;
 		btn_win->btn_wins[i] = subwin(btn_win->win, BTN_HEIGHT, BTN_WIDTH, row, col);
@@ -193,6 +208,10 @@ void initialize_btn_windows(struct ButtonWindow *btn_win) {
 			// exit(1);
 		}
 	}
+}
+
+void initialize_data_window(WINDOW **win) {
+	*win = newwin(DATA_WIN_HEIGHT, DATA_WIN_WIDTH, 1, BTN_WIN_WITDTH + 2);
 }
 
 void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]) {
@@ -210,3 +229,4 @@ void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]) {
 	}
 	wrefresh(btn_win->win);
 }
+

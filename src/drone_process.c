@@ -94,6 +94,11 @@ int main(int argc, char **argv) {
 
 		const struct Vec2D total_force =
 			vec2D_sum(drone_force, vec2D_sum(obstacles_force, targets_force));
+
+		blackboard_set(SECTOR_DRONE_ACTUAL_FORCE, 
+				&(union Payload) { .drone_actual_force = total_force },
+				wpfd, rpfd);
+
 		log_message(LOG_INFO, "summed forces");
 
 		log_message(LOG_INFO, "total force: x %lf, y: %lf",
