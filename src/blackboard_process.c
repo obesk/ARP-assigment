@@ -203,6 +203,9 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 		case SECTOR_DRONE_FORCE:
 			response.payload.drone_force = b->drone.force;
 			break;
+		case SECTOR_DRONE_ACTUAL_FORCE:
+			response.payload.drone_force = b->drone.actual_force;
+			break;
 		case SECTOR_TARGETS:
 			response.payload.targets = b->targets;
 			break;
@@ -228,6 +231,9 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			break;
 		case SECTOR_DRONE_FORCE:
 			b->drone.force = msg->payload.drone_force;
+			break;
+		case SECTOR_DRONE_ACTUAL_FORCE:
+			b->drone.actual_force = msg->payload.drone_actual_force;
 			break;
 		case SECTOR_TARGETS:
 			b->targets = msg->payload.targets;

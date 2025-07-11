@@ -57,6 +57,7 @@ union Payload {
 	// the position (drone)
 	struct Vec2D drone_position;
 	struct Vec2D drone_force;
+	struct Vec2D drone_actual_force;
 	struct Targets targets;
 	struct Obstacles obstacles;
 	struct Config config;
@@ -66,6 +67,7 @@ union Payload {
 enum MemorySector {
 	SECTOR_DRONE_POSITION,
 	SECTOR_DRONE_FORCE,
+	SECTOR_DRONE_ACTUAL_FORCE,
 
 	SECTOR_TARGETS,
 	SECTOR_OBSTACLES,
@@ -209,6 +211,14 @@ struct Vec2D blackboard_get_drone_force(int wpfd, int rpfd) {
 		blackboard_get(SECTOR_DRONE_FORCE, wpfd, rpfd);
 
 	return message_ok(&answer) ? answer.payload.drone_force : (struct Vec2D){0};
+}
+
+struct Vec2D blackboard_get_drone_actual_force(int wpfd, int rpfd) {
+	const struct Message answer =
+		blackboard_get(SECTOR_DRONE_ACTUAL_FORCE, wpfd, rpfd);
+
+	return message_ok(&answer) ? answer.payload.drone_actual_force :
+		(struct Vec2D){0};
 }
 
 struct Config blackboard_get_config(int wpfd, int rpfd) {
