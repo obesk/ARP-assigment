@@ -10,7 +10,6 @@
 #include <ncurses.h>
 
 #define PERIOD process_periods[PROCESS_MAP]
-#define US_TO_S 0.000001
 
 struct Vec2Dint {
 	int x;
