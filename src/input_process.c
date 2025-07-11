@@ -19,17 +19,27 @@
 
 #define BTN_COL_DIST 11
 #define BTN_ROW_DIST 5
+#define BTN_COLS_N 3
+#define BTN_ROWS_N (DIR_N / BTN_COLS_N)
 
 // it's better to have odd numbers to be able to print the button on the center
 #define BTN_WIDTH 5
 #define BTN_HEIGHT 5
 
+// for the window size we need a row/col less plus the button height/width
+#define BTN_WIN_HEIGHT (BTN_ROW_DIST * (BTN_COLS_N - 1) + BTN_WIDTH + 2)
+#define BTN_WIN_WITDTH (BTN_COL_DIST * (BTN_ROWS_N - 1) + BTN_HEIGHT + 2)
+
 #define PERIOD process_periods[PROCESS_INPUT]
-#define US_TO_S 0.000001
+
+struct ButtonWindow {
+	WINDOW *win;
+	WINDOW *btn_wins[DIR_N];
+};
 
 void init_screen(void);
-void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int row, int col);
-void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]);
+void initialize_btn_windows(struct ButtonWindow *btn_win);
+void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Input running");
@@ -48,7 +58,7 @@ int main(int argc, char **argv) {
 	keys_direction_init();
 
 	// this array translates the input direction to forces applied to the drone
-	// stop is not hrere on purpose
+	// stop is not here on purpose
 	const struct Vec2D direction_forces[DIR_N] = {
 		[DIR_UP] = {.y = -N_FORCE},
 		[DIR_UP_LEFT] =
@@ -76,11 +86,12 @@ int main(int argc, char **argv) {
 			},
 	};
 
-	WINDOW *btn_wins[DIR_N];
+	struct ButtonWindow btn_win = { 0 };
+
 	bool btn_highlights[DIR_N];
 
 	init_screen();
-	initialize_btn_windows(btn_wins, 1, 1);
+	initialize_btn_windows(&btn_win);
 
 	char user_input;
 
@@ -134,7 +145,7 @@ int main(int argc, char **argv) {
 
 	draw:
 		// drawing
-		draw_buttons(btn_wins, btn_highlights);
+		draw_buttons(&btn_win, btn_highlights);
 		refresh();
 		watchdog_send_hearthbeat(watchdog_pid, PROCESS_INPUT);
 		clock_gettime(CLOCK_REALTIME, &end_exec_ts);
@@ -163,32 +174,39 @@ void init_screen(void) {
 	curs_set(0); // Hide cursor
 }
 
-void initialize_btn_windows(WINDOW *btn_wins[DIR_N], int start_row,
-							int start_col) {
+
+void initialize_btn_windows(struct ButtonWindow *btn_win) {
+	btn_win->win = newwin(BTN_WIN_HEIGHT, BTN_WIN_WITDTH, 1, 1);
+	if (!btn_win->win) {
+		log_message(LOG_CRITICAL, "error while creating the main button window");
+		exit(1);
+	}
 	for (int i = 0; i < DIR_N; i++) {
-		const int row = start_row + ((i / 3) * BTN_ROW_DIST);
-		const int col = start_col + ((i % 3) * BTN_COL_DIST);
-		btn_wins[i] = newwin(BTN_HEIGHT, BTN_WIDTH, row, col);
-		if (!btn_wins[i]) {
+		const int row = 2 + (i / 3) * BTN_ROW_DIST;
+		const int col = 2 + (i % 3) * BTN_COL_DIST;
+		btn_win->btn_wins[i] = subwin(btn_win->win, BTN_HEIGHT, BTN_WIDTH, row, col);
+		log_message(LOG_INFO, "drawing button at x:%d y:%d", col, row);
+		if (!btn_win->btn_wins[i]) {
 			log_message(LOG_CRITICAL,
-						"newwin() failed for index %d", i);
+						"subwin() failed for index %d", i);
 			endwin();
-			exit(1);
+			// exit(1);
 		}
 	}
 }
 
-void draw_buttons(WINDOW *btn_wins[DIR_N], bool btn_highlights[DIR_N]) {
-
+void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]) {
+	box(btn_win->win, 0, 0);
 	for (int i = 0; i < DIR_N; ++i) {
-		box(btn_wins[i], 0, 0); // draw the button box
+		box(btn_win->btn_wins[i], 0, 0); // draw the button box
 		if (btn_highlights[i]) {
-			wattron(btn_wins[i], COLOR_PAIR(1));
+			wattron(btn_win->btn_wins[i], COLOR_PAIR(1));
 		}
-		mvwprintw(btn_wins[i], BTN_HEIGHT / 2, BTN_WIDTH / 2, "%c", KEYS[i]);
+		mvwprintw(btn_win->btn_wins[i], BTN_HEIGHT / 2, BTN_WIDTH / 2, "%c", KEYS[i]);
 		if (btn_highlights[i]) {
-			wattroff(btn_wins[i], COLOR_PAIR(1));
+			wattroff(btn_win->btn_wins[i], COLOR_PAIR(1));
 		}
-		wrefresh(btn_wins[i]);
+		wrefresh(btn_win->btn_wins[i]);
 	}
+	wrefresh(btn_win->win);
 }
