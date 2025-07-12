@@ -44,6 +44,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	watchdog_register_term_handler();
+
 	// FIXME: this should be set by asking to the blackboard
 	struct Vec2D old_drone_positions[2] = {
 		{GEOFENCE / 2., GEOFENCE / 2.},

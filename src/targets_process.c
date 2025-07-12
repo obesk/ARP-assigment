@@ -18,9 +18,6 @@
 int spawn_targets(int rpfd, int wpfd);
 
 int main(int argc, char **argv) {
-	// this is to prevent the other processes which can be spawned at the same
-	// time to have the same seed
-	srand(time(NULL) ^ getpid());
 	log_message(LOG_INFO, "Targets running");
 
 	if (argc < 4) {
@@ -35,6 +32,12 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
+	watchdog_register_term_handler();
+
+	// this is to prevent the other processes which can be spawned at the same
+	// time to have the same seed
+	srand(time(NULL) ^ getpid());
+
 	int current_target_n = spawn_targets(rpfd, wpfd);
 
 	struct timespec start_exec_ts, end_exec_ts;

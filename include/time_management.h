@@ -38,7 +38,7 @@ bool wait_for_next_period(long period, const struct timespec start_exec_ts,
 		return false;
 	}
 
-	log_message(LOG_INFO, "execution time: %ld, period: %ld",
+	log_message(LOG_DEBUG, "execution time: %ld, period: %ld",
 				execution_time, period);
 	usleep(period - execution_time);
 	return true;

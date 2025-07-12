@@ -35,6 +35,8 @@ int loadJSONConfig(struct Config *const c);
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
 
+	watchdog_register_term_handler();
+
 	struct Blackboard blackboard = {
 		.drone.position.x = GEOFENCE / 2.,
 		.drone.position.y = GEOFENCE / 2.,
@@ -42,22 +44,21 @@ int main(int argc, char **argv) {
 	loadJSONConfig(&blackboard.config);
 
 	log_message(LOG_INFO, "loaded config");
-	
+
 	// read and write for each processes
 	// +1 for the program name and +1 for the watchdog pid
-	const int expected_argc = PROCESS_N * 2 + 2; 
+	const int expected_argc = PROCESS_N * 2 + 2;
 
 	if (argc != expected_argc) {
-		log_message(LOG_CRITICAL,
+		log_message(
+			LOG_CRITICAL,
 			"Erroneous number of arguments passed, expected: %d, got: %d",
 			expected_argc, argc);
 	}
 
 	struct PFDs *pfds = argsToPFDs(&argv[1]);
 	int watchdog_pid = atoi(argv[argc - 1]);
-	log_message(LOG_INFO,
-		"argc: %d, watchdog_pid: %d",
-		argc, watchdog_pid);
+	log_message(LOG_INFO, "argc: %d, watchdog_pid: %d", argc, watchdog_pid);
 
 	const int max_fd = getMaxFd(pfds) + 1;
 	struct timespec ts_start_exec, ts_end_exec;
@@ -83,8 +84,7 @@ int main(int argc, char **argv) {
 
 			for (int i = 0; i < PROCESS_N; ++i) {
 				if (FD_ISSET(pfds->read[i], &to_read)) {
-					log_message(LOG_DEBUG, 
-								"Received message from pfid: %d",
+					log_message(LOG_DEBUG, "Received message from pfid: %d",
 								pfds->read[i]);
 					const struct Message msg = messageRead(pfds->read[i]);
 
@@ -97,7 +97,8 @@ int main(int argc, char **argv) {
 		us_update_config_remaining -= ts_diff_us(ts_end_exec, ts_start_exec);
 		if (us_update_config_remaining <= 0) {
 			log_message(LOG_INFO,
-						"sending hearthbeat from blackboard, watchdog_pid: %d", watchdog_pid);
+						"sending hearthbeat from blackboard, watchdog_pid: %d",
+						watchdog_pid);
 			us_update_config_remaining = PERIOD;
 			loadJSONConfig(&blackboard.config);
 			watchdog_send_hearthbeat(watchdog_pid, PROCESS_BLACKBOARD);
@@ -138,16 +139,19 @@ int loadJSONConfig(struct Config *const c) {
 		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
 	if (c->n_obstacles < 0 || c->n_obstacles > MAX_OBSTACLES) {
 		log_message(LOG_ERROR,
-				"Value specified for numer of obstacles in settings is not"
-				"valid, setting it to %d", MAX_OBSTACLES);
+					"Value specified for numer of obstacles in settings is not"
+					"valid, setting it to %d",
+					MAX_OBSTACLES);
 	}
 
 	c->n_targets =
 		cJSON_GetObjectItemCaseSensitive(json, "n_targets")->valueint;
 	if (c->n_targets < 0 || c->n_targets > MAX_TARGETS) {
-		log_message(LOG_ERROR,
-				"Value specified for numer of targets in settings is not valid,"
-				"setting it to %d", MAX_TARGETS);
+		log_message(
+			LOG_ERROR,
+			"Value specified for numer of targets in settings is not valid,"
+			"setting it to %d",
+			MAX_TARGETS);
 	}
 
 	c->force_applied_N =

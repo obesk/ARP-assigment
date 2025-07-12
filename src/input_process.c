@@ -12,9 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define N_FORCE 1
-// defined to avoid calling cos / sin multiple times
+// defined to avoid calling cos or sin multiple times
 #define COS_SIN_45 0.7071067
 
 #define BTN_COL_DIST 11
@@ -45,6 +46,7 @@ void initialize_btn_windows(struct ButtonWindow *btn_win);
 void initialize_data_window(WINDOW **win);
 void draw_buttons(struct ButtonWindow *btn_win, bool btn_highlights[DIR_N]);
 void draw_data(WINDOW *data_win);
+void stop(int signum);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Input running");
@@ -60,6 +62,9 @@ int main(int argc, char **argv) {
 	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
 		exit(1);
 	}
+
+	watchdog_register_term_handler();
+
 	keys_direction_init();
 
 	// this array translates the input direction to forces applied to the drone
@@ -205,7 +210,7 @@ void initialize_btn_windows(struct ButtonWindow *btn_win) {
 			log_message(LOG_CRITICAL,
 						"subwin() failed for index %d", i);
 			endwin();
-			// exit(1);
+			exit(1);
 		}
 	}
 }

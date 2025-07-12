@@ -16,7 +16,7 @@
 #define PERIOD 10000
 
 // factor to which we multiply the periods to generate the allowed inactive time
-#define WAIT_FACTOR 20
+#define WAIT_FACTOR 2
 
 // NOTE: the pid is not strictly necessary but prevents other processes to start
 // impersonating a process and detect conflicts
@@ -57,7 +57,7 @@ int main(void) {
 
 	// waiting some time before registration to give the processes time to start
 	// up
-	usleep(5 * US_IN_S);
+	usleep(1 * US_IN_S);
 
 	// clearing the signal queue before starting the registration process
 	log_message(LOG_INFO,
@@ -106,9 +106,14 @@ int main(void) {
 	for (int i = 0; i < WATCHED_PROCESSES; ++i) {
 		if (!hearthbeats[i].pid) {
 			log_message(LOG_CRITICAL,
-				"process %d did not manage to register correctly, exiting...",
+				"process %d did not manage to register correctly, killing all processes...",
 				i);
-			kill_all_processes(hearthbeats);
+			bool ok = kill_all_processes(hearthbeats);
+			if (ok) {
+				log_message(LOG_INFO, "managed to kill all processes correctly, exiting...")
+			} else {
+				log_message(LOG_ERROR, "error while killing some processes, exiting...");
+			}
 			exit(1);
 		}
 	}
@@ -161,7 +166,12 @@ int main(void) {
 							"hearthbeat in the allowed time %ld, exiting",
 							i, hearthbeats[i].pid,
 							process_periods[i] * WAIT_FACTOR);
-				kill_all_processes(hearthbeats);
+				bool ok = kill_all_processes(hearthbeats);
+				if (ok) {
+					log_message(LOG_INFO, "managed to kill all processes correctly, exiting...")
+				} else {
+					log_message(LOG_ERROR, "not all processes were killed, exiting anyways...");
+				}
 				exit(1);
 			}
 		}
@@ -216,7 +226,9 @@ bool kill_all_processes(struct hearthbeat hearthbeats[WATCHED_PROCESSES]) {
 	bool success = true;
 	for (int i = 0; i < WATCHED_PROCESSES; ++i) {
 		if (hearthbeats[i].pid > 0) {
-			success &= kill(hearthbeats[i].pid, SIGKILL) > 0;
+			int ret = kill(hearthbeats[i].pid, SIGTERM);
+			log_message(LOG_ERROR, "kill return value for process %d, with "
+					"pid: %d: %d", i, hearthbeats[i].pid, ret);
 		}
 	}
 	return success;
