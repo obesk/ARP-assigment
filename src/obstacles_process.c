@@ -16,15 +16,18 @@
 #define OBSTACLE_UPDATE_TIME 100000000
 
 int main(int argc, char **argv) {
+	log_message(LOG_INFO, "Obstacles running");
+
 	int rpfd, wpfd, watchdog_pid;
 	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
 		exit(1);
 	}
 
+	watchdog_register_term_handler();
+
 	// this is to prevent the other processes which can be spawned at the same
 	// time to have the same seed
 	srand(time(NULL) ^ getpid());
-	log_message(LOG_INFO, "Obstacles running");
 
 	if (argc != 4) {
 		log_message(LOG_CRITICAL,

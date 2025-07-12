@@ -20,7 +20,6 @@ void init_screen(void);
 struct Vec2Dint convert_coordinates(const WINDOW *win, struct Vec2D coord);
 
 int main(int argc, char **argv) {
-
 	log_message(LOG_INFO, "Map running");
 
 	if (argc < 4) {
@@ -30,13 +29,14 @@ int main(int argc, char **argv) {
 
 		exit(1);
 	}
-
-	init_screen();
-
 	int rpfd, wpfd, watchdog_pid; 
 	if (!process_get_arguments(argv, &rpfd, &wpfd, &watchdog_pid)) {
 		exit(1);
 	}
+
+	watchdog_register_term_handler();
+
+	init_screen();
 
 	WINDOW *border = newwin(0, 0, 0, 0);
 	struct timespec start_exec_ts, end_exec_ts;
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 				convert_coordinates(border, targets.targets[i]);
 			log_message(LOG_INFO,
 				"target %d x: %lf, target x char: %d, target y : %lf, target y "
-				"char : %d ",
+				"char : %d",
 				i, targets.targets[i].x, t.x, targets.targets[i].y, t.y);
 			mvwprintw(border, t.y, t.x, "%d", targets.n - i);
 		}
