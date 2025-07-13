@@ -12,7 +12,6 @@
 #include <unistd.h>
 
 // +1 to account for the blackboard hearthbeat
-
 #define PERIOD 10000
 
 // factor to which we multiply the periods to generate the allowed inactive time

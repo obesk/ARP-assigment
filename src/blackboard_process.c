@@ -56,11 +56,11 @@ int main(int argc, char **argv) {
 			expected_argc, argc);
 	}
 
-	struct PFDs *pfds = argsToPFDs(&argv[1]);
+	struct PFDs pfds;
+	argsToPFDs(&pfds, &argv[1]);
 	int watchdog_pid = atoi(argv[argc - 1]);
-	log_message(LOG_INFO, "argc: %d, watchdog_pid: %d", argc, watchdog_pid);
 
-	const int max_fd = getMaxFd(pfds) + 1;
+	const int max_fd = getMaxFd(&pfds) + 1;
 	struct timespec ts_start_exec, ts_end_exec;
 	long us_update_config_remaining = PERIOD;
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 		FD_ZERO(&to_read);
 
 		for (int i = 0; i < PROCESS_N; ++i) {
-			FD_SET(pfds->read[i], &to_read);
+			FD_SET(pfds.read[i], &to_read);
 		}
 
 		struct timeval select_timeout = {
@@ -83,12 +83,12 @@ int main(int argc, char **argv) {
 			log_message(LOG_DEBUG, "select returned something!");
 
 			for (int i = 0; i < PROCESS_N; ++i) {
-				if (FD_ISSET(pfds->read[i], &to_read)) {
+				if (FD_ISSET(pfds.read[i], &to_read)) {
 					log_message(LOG_DEBUG, "Received message from pfid: %d",
-								pfds->read[i]);
-					const struct Message msg = messageRead(pfds->read[i]);
+								pfds.read[i]);
+					const struct Message msg = messageRead(pfds.read[i]);
 
-					messageManage(&msg, &blackboard, pfds->write[i]);
+					messageManage(&msg, &blackboard, pfds.write[i]);
 				}
 			}
 		}
@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
 			watchdog_send_hearthbeat(watchdog_pid, PROCESS_BLACKBOARD);
 		}
 	}
+	closeAllPFDs(&pfds);
 }
 
 int loadJSONConfig(struct Config *const c) {
