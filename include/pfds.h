@@ -70,16 +70,13 @@ void closeAllPFDs(struct PFDs *const pfds) {
 	}
 }
 
-struct PFDs *argsToPFDs(char **argv) {
-	struct PFDs *pfds = malloc(sizeof(struct PFDs));
-
+void argsToPFDs(struct PFDs *const pfds, char **argv) {
 	int *p = (int *)pfds;
 	for (int i = 0; i < PROCESS_N * 2; ++i) {
 		*p = atoi(argv[i]);
 		log_message(LOG_DEBUG, "Parsed FD[%d]: %d", i, *p);
 		++p;
 	}
-	return pfds;
 }
 
 int getMaxFd(const struct PFDs *const pfds) {
