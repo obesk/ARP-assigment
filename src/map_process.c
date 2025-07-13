@@ -11,6 +11,12 @@
 
 #define PERIOD process_periods[PROCESS_MAP]
 
+enum CPair {
+	CPAIR_DRONE = 1, // initializing to 1 since 0 is the default color
+	CPAIR_TARGET,
+	CPAIR_OBSTACLE,
+};
+
 struct Vec2Dint {
 	int x;
 	int y;
@@ -58,8 +64,10 @@ int main(int argc, char **argv) {
 		werase(border);
 		box(border, 0, 0);
 
+		wattron(border, COLOR_PAIR(CPAIR_DRONE));
 		mvwprintw(border, char_drone_position.y, char_drone_position.x, "%c",
 				  '+');
+		wattroff(border, COLOR_PAIR(CPAIR_DRONE));
 
 		mvwprintw(border, 0, 0, "score: %d", score);
 
@@ -67,6 +75,7 @@ int main(int argc, char **argv) {
 
 		const struct Targets targets = blackboard_get_targets(wpfd, rpfd);
 		log_message(LOG_INFO, "targets n: %d", targets.n);
+		wattron(border, COLOR_PAIR(CPAIR_TARGET));
 		for (int i = 0; i < targets.n; ++i) {
 			const struct Vec2Dint t =
 				convert_coordinates(border, targets.targets[i]);
@@ -76,6 +85,7 @@ int main(int argc, char **argv) {
 				i, targets.targets[i].x, t.x, targets.targets[i].y, t.y);
 			mvwprintw(border, t.y, t.x, "%d", targets.n - i);
 		}
+		wattroff(border, COLOR_PAIR(CPAIR_TARGET));
 
 		for (int i = 0; i < obstacles.n; ++i) {
 			const struct Vec2Dint o =
@@ -86,7 +96,9 @@ int main(int argc, char **argv) {
 						"char : %d ",
 						i, obstacles.obstacles[i].x, o.x,
 						obstacles.obstacles[i].y, o.y);
+			wattron(border, COLOR_PAIR(CPAIR_OBSTACLE));
 			mvwprintw(border, o.y, o.x, "%c", 'o');
+			wattroff(border, COLOR_PAIR(CPAIR_OBSTACLE));
 		}
 
 		wrefresh(border);
@@ -124,7 +136,9 @@ void init_screen(void) {
 
 	if (has_colors()) {
 		start_color();
-		init_pair(1, COLOR_BLACK, COLOR_WHITE); // Define COLOR_PAIR(1)
+		init_pair(CPAIR_DRONE, COLOR_BLUE, COLOR_BLACK); 
+		init_pair(CPAIR_TARGET, COLOR_YELLOW, COLOR_BLACK);  
+		init_pair(CPAIR_OBSTACLE, COLOR_GREEN, COLOR_BLACK); 
 	}
 	curs_set(0); // Hide cursor
 }
