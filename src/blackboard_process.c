@@ -4,16 +4,15 @@
 #include "obstacle.h"
 #include "target.h"
 #include "watchdog.h"
-
 #include "processes.h"
 #include "time_management.h"
-
 #include "blackboard.h"
 #include "logging.h"
 #include "pfds.h"
 #include "stdbool.h"
 
 #include <cjson/cJSON.h>
+#include <stdlib.h>
 
 #define PERIOD process_periods[PROCESS_BLACKBOARD]
 // TODO: this needs to be dimensioned correctly

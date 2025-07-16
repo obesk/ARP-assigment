@@ -15,15 +15,17 @@ TARGETS = $(BIN_DIR)/targets
 OBSTACLES = $(BIN_DIR)/obstacles
 WATCHDOG = $(BIN_DIR)/watchdog
 
+LIB_SRC = src/pfds.c src/processes.c src/watchdog.c src/blackboard.c src/keys.c src/time_management.c src/vec2d.c
+
 # Source files for each executable
-SPAWNER_SRC = src/spawner.c
-BLACKBOARD_SRC = src/blackboard_process.c
-DRONE_SRC = src/drone_process.c
-INPUT_SRC = src/input_process.c
-MAP_SRC = src/map_process.c
-TARGETS_SRC = src/targets_process.c
-OBSTACLES_SRC = src/obstacles_process.c
-WATCHDOG_SRC = src/watchdog_process.c
+SPAWNER_SRC = src/spawner.c $(LIB_SRC)
+BLACKBOARD_SRC = src/blackboard_process.c $(LIB_SRC)
+DRONE_SRC = src/drone_process.c $(LIB_SRC)
+INPUT_SRC = src/input_process.c $(LIB_SRC)
+MAP_SRC = src/map_process.c $(LIB_SRC)
+TARGETS_SRC = src/targets_process.c $(LIB_SRC)
+OBSTACLES_SRC = src/obstacles_process.c $(LIB_SRC)
+WATCHDOG_SRC = src/watchdog_process.c $(LIB_SRC)
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SPAWNER_SRC))
@@ -80,6 +82,6 @@ clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR) *.log
 
 kill:
-	killall drone; killall blackboard; killall input; killall map; killall spawner; killall targets; killall watchdog
+	killall drone; killall blackboard; killall input; killall map; killall spawner; killall targets; killall obstacles; killall watchdog
 
 

@@ -34,14 +34,6 @@ static char KEYS[DIR_N] = {
 // it needs to be able to contain all possible chars
 static enum Direction DIRECTION_KEYS[CHARS_NUMBER];
 
-void keys_direction_init() {
-	for (int i = 0; i < CHARS_NUMBER; ++i) {
-		DIRECTION_KEYS[i] = -1;
-	}
-
-	for (int i = 0; i < DIR_N; ++i) {
-		DIRECTION_KEYS[(int)KEYS[i]] = i;
-	}
-}
+void keys_direction_init();
 
 #endif // KEYS_H

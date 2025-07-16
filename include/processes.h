@@ -1,12 +1,9 @@
 #ifndef PROCESSES_H
 #define PROCESSES_H
 
-#define WATCHED_PROCESSES (PROCESS_N + 1)
-
-#include "logging.h"
-
 #include <stdbool.h>
-#include <stdlib.h>
+
+#define WATCHED_PROCESSES (PROCESS_N + 1)
 
 // blackboard and watchdog are excluded from this process list since they are
 // treated differently from other processes
@@ -31,17 +28,6 @@ static const long process_periods[WATCHED_PROCESSES] = {
 
 
 bool process_get_arguments(char **argv, int *const rpfd, int *const wpfd,
-		int *const watchdog_pid) { 
-	*rpfd = atoi(argv[1]);
-	*wpfd = atoi(argv[2]);
-	*watchdog_pid = atoi(argv[3]);
-
-	if (!*rpfd || !*wpfd || !*watchdog_pid) {
-		log_message(LOG_CRITICAL, 
-			"Incorrect arguments passed, expected integers");
-		return false;
-	}
-	return true;
-} 
+		int *const watchdog_pid);
 
 #endif // PROCESSES_H
