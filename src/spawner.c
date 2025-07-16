@@ -1,14 +1,15 @@
 #define PROCESS_NAME "SPAWNER"
 
 #include "processes.h"
+#include "logging.h"
+#include "pfds.h"
+
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #define MAX_SIZE_PNAME = 50;
-
-#include "logging.h"
-#include "pfds.h"
 
 int main(void) {
 	const char *const executables[PROCESS_N] = {

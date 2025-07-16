@@ -8,6 +8,8 @@
 #include "watchdog.h"
 
 #include <unistd.h>
+#include <stdlib.h>
+#include <math.h>
 
 /* #define M 1.0 // drone mass [kg] */
 /* #define K 1.0 // viscous koefficient [N * s * m] */

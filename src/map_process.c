@@ -8,6 +8,7 @@
 #include "watchdog.h"
 
 #include <ncurses.h>
+#include <stdlib.h>
 
 #define PERIOD process_periods[PROCESS_MAP]
 
