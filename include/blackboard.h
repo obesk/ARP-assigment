@@ -4,6 +4,7 @@
 #include "vec2d.h"
 #include "target.h"
 #include "obstacle.h"
+#include "processes.h"
 
 #include <stdbool.h>
 
@@ -46,6 +47,8 @@ struct Config {
 	float max_target_distance;
 	float target_caught_distance;
 	float target_attraction_coeff;
+
+	bool active_processes[PROCESS_N];
 };
 
 union Payload {
