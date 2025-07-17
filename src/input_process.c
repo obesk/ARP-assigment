@@ -67,6 +67,10 @@ int main(int argc, char **argv) {
 
 	keys_direction_init();
 
+	for(int i = 0; i < DIR_N; ++i) {
+		log_message(LOG_INFO, "Direction %d, letter: %c, index: %d, key %d", i, KEYS[i], KEYS[i], DIRECTION_KEYS[(int)KEYS[i]]);
+	}
+
 	// this array translates the input direction to forces applied to the drone
 	// stop is not here on purpose
 	const struct Vec2D direction_forces[DIR_N] = {
