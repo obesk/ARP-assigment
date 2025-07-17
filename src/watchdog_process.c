@@ -65,58 +65,6 @@ int main(void) {
 	while (sigtimedwait(&mask, NULL, &(struct timespec){0}) > 0)
 		;
 
-	long wait_time_us = max_period * WAIT_FACTOR;
-
-	struct timespec start_time_ts;
-	clock_gettime(CLOCK_REALTIME, &start_time_ts);
-	log_message(LOG_INFO, "starting process registration phase");
-
-	// waiting for all processes to "register"
-	while (wait_time_us > 0) {
-		log_message(LOG_DEBUG,
-					"%ld us to go for registration phase to finish",
-					wait_time_us);
-
-		const struct timespec wait_time_ts = us_to_ts(wait_time_us);
-
-		log_message(LOG_DEBUG,
-			"waiting for the signals for maximum %ld seconds, %ld nanoseconds",
-			wait_time_ts.tv_sec, wait_time_ts.tv_nsec);
-
-		int ret = sigtimedwait(&mask, &info, &wait_time_ts);
-
-		if (ret >= 0) {
-			register_hearthbeat(hearthbeats, &info);
-		}
-
-		struct timespec end_time_ts;
-
-		clock_gettime(CLOCK_REALTIME, &end_time_ts);
-
-		wait_time_us -= ts_diff_us(end_time_ts, start_time_ts);
-		start_time_ts = end_time_ts;
-	}
-
-	log_message(LOG_INFO,
-				"finished process registration phase, starting process "
-				"monitoring phase");
-
-	// check that all processes have correctly registered
-	for (int i = 0; i < WATCHED_PROCESSES; ++i) {
-		if (!hearthbeats[i].pid) {
-			log_message(LOG_CRITICAL,
-				"process %d did not manage to register correctly, killing all processes...",
-				i);
-			bool ok = kill_all_processes(hearthbeats);
-			if (ok) {
-				log_message(LOG_INFO, "managed to kill all processes correctly, exiting...")
-			} else {
-				log_message(LOG_ERROR, "error while killing some processes, exiting...");
-			}
-			exit(1);
-		}
-	}
-
 	// it does not make sense to recheck that all processes are still active
 	// after every  received signal; it's enough to check every period of the
 	// most frequent process
@@ -158,7 +106,8 @@ int main(void) {
 						"elapsed time from hearthbeat for process %d: %ld", i,
 						elapsed_time_from_hearthbeat);
 
-			if (elapsed_time_from_hearthbeat >
+			if (hearthbeats[i].pid &&
+				elapsed_time_from_hearthbeat >
 				process_periods[i] * WAIT_FACTOR) {
 				log_message(LOG_CRITICAL,
 							"process %d with pid %d has not managed to send a "
