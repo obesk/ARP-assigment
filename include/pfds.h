@@ -12,6 +12,7 @@
 struct PFDs {
 	int read[PROCESS_N];  // fds to receive data from the processes
 	int write[PROCESS_N]; // fds to send data to the processes
+	int n_processes;
 };
 
 bool newPFDs(struct PFDs *const blackboard_pfds,

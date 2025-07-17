@@ -26,7 +26,6 @@ static const long process_periods[WATCHED_PROCESSES] = {
 	[PROCESS_OBSTACLES] = 10000, [PROCESS_BLACKBOARD] = 500000,
 };
 
-
 bool process_get_arguments(char **argv, int *const rpfd, int *const wpfd,
 		int *const watchdog_pid);
 

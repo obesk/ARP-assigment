@@ -4,12 +4,13 @@
 #include "obstacle.h"
 #include "target.h"
 #include "watchdog.h"
-#include "processes.h"
 #include "time_management.h"
 #include "blackboard.h"
 #include "logging.h"
 #include "pfds.h"
-#include "stdbool.h"
+
+#include <stdbool.h>
+#include <string.h>
 
 #include <cjson/cJSON.h>
 #include <stdlib.h>
@@ -69,6 +70,9 @@ int main(int argc, char **argv) {
 		FD_ZERO(&to_read);
 
 		for (int i = 0; i < PROCESS_N; ++i) {
+			if (!blackboard.config.active_processes[i]) {
+				continue;
+			}
 			FD_SET(pfds.read[i], &to_read);
 		}
 
@@ -79,12 +83,12 @@ int main(int argc, char **argv) {
 
 		int n_to_read = select(max_fd, &to_read, NULL, NULL, &select_timeout);
 		if (n_to_read > 0) {
-			log_message(LOG_DEBUG, "select returned something!");
-
+			log_message(LOG_INFO, "select returned something!");
 			for (int i = 0; i < PROCESS_N; ++i) {
-				if (FD_ISSET(pfds.read[i], &to_read)) {
-					log_message(LOG_DEBUG, "Received message from pfid: %d",
-								pfds.read[i]);
+				if (blackboard.config.active_processes[i] &&
+					FD_ISSET(pfds.read[i], &to_read)) {
+					log_message(LOG_INFO, "Received message from pfid: %d of process: %d",
+								pfds.read[i], i);
 					const struct Message msg = messageRead(pfds.read[i]);
 
 					messageManage(&msg, &blackboard, pfds.write[i]);
@@ -183,6 +187,15 @@ int loadJSONConfig(struct Config *const c) {
 	c->target_attraction_coeff =
 		cJSON_GetObjectItemCaseSensitive(json, "target_attraction_coeff")
 			->valuedouble;
+
+	//TODO: manage split false/true
+	memset(c->active_processes, false, sizeof(bool) * PROCESS_N);
+	const cJSON *active_processes = cJSON_GetObjectItemCaseSensitive(json, "active_processes");
+	const cJSON *process;
+
+	cJSON_ArrayForEach(process, active_processes) {
+		c->active_processes[process->valueint] = true;
+	}
 
 	log_message(LOG_INFO, "read values");
 
