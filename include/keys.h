@@ -1,7 +1,7 @@
 #ifndef KEYS_H
 #define KEYS_H
 
-#define CHARS_NUMBER (1 << sizeof(char))
+#define CHARS_NUMBER (1 << (sizeof(char) * 8))
 
 // M is put before the name to
 enum Direction {
@@ -22,17 +22,12 @@ enum Direction {
 	DIR_N,
 };
 
-static char KEYS[DIR_N] = {
-	[DIR_UP] = 'w',		   [DIR_UP_LEFT] = 'q',	 [DIR_LEFT] = 'a',
-	[DIR_DOWN_LEFT] = 'z', [DIR_DOWN] = 'x',	 [DIR_DOWN_RIGHT] = 'c',
-	[DIR_RIGHT] = 'd',	   [DIR_UP_RIGHT] = 'e', [DIR_STOP] = 's',
-};
-
+extern char KEYS[DIR_N];
 // doing an array this way it's useful to remove the use of switches which only
 // work with constant expressions, so not compatible if the keymap is loaded at
 // runtime
 // it needs to be able to contain all possible chars
-static enum Direction DIRECTION_KEYS[CHARS_NUMBER];
+extern enum Direction DIRECTION_KEYS[CHARS_NUMBER];
 
 void keys_direction_init();
 
