@@ -1,4 +1,0 @@
-struct Message {
-    unsigned long index;
-    string message;
-};

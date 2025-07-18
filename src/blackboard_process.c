@@ -37,8 +37,8 @@ int loadJSONConfig(struct Config *const c);
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
 
-	BHandle h = blackboard_publisher_create();
-	blackboard_publisher_free(h);
+	BHandle DDS_blackboard_publisher = blackboard_publisher_create();
+	blackboard_publisher_init(DDS_blackboard_publisher);
 
 	watchdog_register_term_handler();
 
@@ -97,6 +97,9 @@ int main(int argc, char **argv) {
 					const struct Message msg = messageRead(pfds.read[i]);
 
 					messageManage(&msg, &blackboard, pfds.write[i]);
+					if(msg.type == TYPE_SET) {
+						blackboard_publish_message(DDS_blackboard_publisher, &msg);
+					}
 				}
 			}
 		}
@@ -112,7 +115,11 @@ int main(int argc, char **argv) {
 			watchdog_send_hearthbeat(watchdog_pid, PROCESS_BLACKBOARD);
 		}
 	}
+
+	blackboard_publisher_free(DDS_blackboard_publisher);
 	closeAllPFDs(&pfds);
+
+	return 0;
 }
 
 int loadJSONConfig(struct Config *const c) {

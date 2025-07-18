@@ -1,0 +1,29 @@
+struct DDSVec2D {
+	double x;
+	double y;
+};
+
+
+enum DDSMemorySector {
+	DRONE_POSITION,
+	DRONE_FORCE,
+	DRONE_ACTUAL_FORCE,
+
+	TARGETS,
+	OBSTACLES,
+
+	SCORE
+};
+
+union DDSPayload switch (DDSMemorySector) {
+	case DRONE_POSITION:
+		DDSVec2D drone_position;
+	case DRONE_FORCE:
+		DDSVec2D drone_force;
+	case DRONE_ACTUAL_FORCE:
+		DDSVec2D drone_actual_force;
+};
+
+struct DDSMessage {
+	DDSPayload payload;
+};
