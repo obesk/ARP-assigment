@@ -1,18 +1,18 @@
 #include "blackboard_publisher.hpp"
 
-#include "message.hpp"
-#include "messagePubSubTypes.hpp"
+#include "DDSMessage.hpp"
+#include "DDSMessagePubSubTypes.hpp"
 
 BlackboardPublisher::BlackboardPublisher()
 	: participant_(nullptr)
 	, publisher_(nullptr)
 	, topic_(nullptr)
 	, writer_(nullptr)
-	, type_(new MessagePubSubType()) { }
+	, type_(new DDSMessagePubSubType()) { }
 
 BlackboardPublisher::~BlackboardPublisher() {
 	if (writer_ != nullptr) {
-			publisher_->delete_datawriter(writer_);
+		publisher_->delete_datawriter(writer_);
 	}
 
 	if (publisher_ != nullptr) {
@@ -27,11 +27,8 @@ BlackboardPublisher::~BlackboardPublisher() {
 }
 
 bool BlackboardPublisher::init() {
-	message_.index(0);
-	message_.message("HelloWorld");
-
 	DomainParticipantQos participantQos;
-	participantQos.name("Participant_publisher");
+	participantQos.name("BlackboardPublisher");
 	participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
 
 	if (participant_ == nullptr) {
@@ -42,45 +39,32 @@ bool BlackboardPublisher::init() {
 	type_.register_type(participant_);
 
 	// Create the publications Topic
-	topic_ = participant_->create_topic("HelloWorldTopic", "HelloWorld", TOPIC_QOS_DEFAULT);
-
+	topic_ = participant_->create_topic("BlackboardTopic", "DDSMessage", TOPIC_QOS_DEFAULT);
 	if (topic_ == nullptr) {
 		return false;
 	}
 
 	// Create the Publisher
 	publisher_ = participant_->create_publisher(PUBLISHER_QOS_DEFAULT, nullptr);
-
 	if (publisher_ == nullptr) {
 		return false;
 	}
 
 	// Create the DataWriter
 	writer_ = publisher_->create_datawriter(topic_, DATAWRITER_QOS_DEFAULT, &listener_);
-
 	if (writer_ == nullptr) {
 		return false;
 	}
 	return true;
 }
 
-bool BlackboardPublisher::publish() {
+bool BlackboardPublisher::publish(DDSMessage message) {
+	std::cerr << "publish" << std::endl;
 	if (listener_.matched_ > 0) {
-		message_.index(message_.index() + 1);
-		writer_->write(&message_);
+		std::cerr << "writing message" << std::endl;
+		writer_->write(&message);
+		std::cerr << "message wrote" << std::endl;
 		return true;
 	}
 	return false;
-}
-
-void BlackboardPublisher::run(uint32_t samples) {
-	uint32_t samples_sent = 0;
-	while (samples_sent < samples) {
-		if (publish()) {
-			samples_sent++;
-			std::cout << "Message: " << message_.message() << " with index: " << message_.index()
-						<< " SENT" << std::endl;
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
 }

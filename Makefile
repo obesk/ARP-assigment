@@ -101,9 +101,10 @@ $(CXX_BUILD_DIR)/%.o: src/%.cpp | $(CXX_BUILD_DIR)
 # Generate IDL files for fastdss
 # Both rules will generate all the files, they are repeated so that the first 
 # needed is used 
+# TODO: remove ?
+# .PRECIOUS: $(IDL_BUILD_DIR)/%TypeObjectSupport.cxx $(IDL_BUILD_DIR)/%PubSubTypes.cxx
 $(IDL_BUILD_DIR)/%TypeObjectSupport.cxx: $(IDL_DIR)/%.idl | $(IDL_BUILD_DIR)
 	fastddsgen $< -flat-output-dir -d $(IDL_BUILD_DIR)
-
 $(IDL_BUILD_DIR)/%PubSubTypes.cxx: $(IDL_DIR)/%.idl | $(IDL_BUILD_DIR)
 	fastddsgen $< -flat-output-dir -d $(IDL_BUILD_DIR)
 

@@ -3,6 +3,10 @@
 
 #include <unistd.h>
 
+const struct Message error_msg = {.type = TYPE_RESULT, .payload.ack = RES_ERR};
+
+const struct Message reject_msg = {.type = TYPE_RESULT, .payload.ack = RES_REJ};
+
 struct Message messageRead(const int pfd) {
 	struct Message msg;
 

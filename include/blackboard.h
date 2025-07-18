@@ -87,11 +87,8 @@ struct Message {
 };
 
 // TODO: since they are static they should be uppercase
-static const struct Message error_msg = {.type = TYPE_RESULT,
-										 .payload.ack = RES_ERR};
-
-static const struct Message reject_msg = {.type = TYPE_RESULT,
-										  .payload.ack = RES_REJ};
+extern const struct Message error_msg;
+extern const struct Message reject_msg;
 
 
 struct Message messageRead(const int pfd);

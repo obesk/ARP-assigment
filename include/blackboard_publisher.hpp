@@ -1,8 +1,8 @@
 #ifndef BLACKBOARD_PUBLISHER_HPP
 #define BLACKBOARD_PUBLISHER_HPP
 
-#include "message.hpp"
-#include "messagePubSubTypes.hpp"
+#include "DDSMessage.hpp"
+#include "DDSMessagePubSubTypes.hpp"
 
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
@@ -18,7 +18,6 @@ using namespace eprosima::fastdds::dds;
 
 class BlackboardPublisher {
  private:
-	Message message_;
 	DomainParticipant* participant_;
 	Publisher* publisher_;
 	Topic* topic_;
@@ -33,15 +32,15 @@ class BlackboardPublisher {
 		~PubListener() override { }
 		void on_publication_matched(DataWriter*, const PublicationMatchedStatus& info) override {
 			if (info.current_count_change == 1) {
-					matched_ = info.total_count;
-					std::cout << "Publisher matched." << std::endl;
+				matched_ = info.total_count;
+				std::cout << "Publisher matched." << std::endl;
 			}
 			else if (info.current_count_change == -1) {
-					matched_ = info.total_count;
-					std::cout << "Publisher unmatched." << std::endl;
+				matched_ = info.total_count;
+				std::cout << "Publisher unmatched." << std::endl;
 			} else {
-					std::cout << info.current_count_change
-							<< " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
+				std::cout << info.current_count_change
+					<< " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
 			}
 		}
 		std::atomic_int matched_;
@@ -51,12 +50,8 @@ class BlackboardPublisher {
 	virtual ~BlackboardPublisher();
 
 	bool init();
-	//!Send a publication
-	bool publish();
-	//!Run the Publisher
-	void run( uint32_t samples);
-
+	bool publish(DDSMessage message);
 };
 
-#endif //BLACKBARD_PUBLISHER_HPP
+#endif //BLACKBOARD_PUBLISHER_HPP
 

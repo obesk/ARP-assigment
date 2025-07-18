@@ -7,11 +7,16 @@ struct BlackboardPublisher;
 extern "C" {
 #endif
 
+#include "blackboard.h"
+
+#include <stdbool.h>
+
 typedef struct BlackboardPublisher *BHandle;
 
 BHandle blackboard_publisher_create();
+bool blackboard_publisher_init(BHandle bp);
 void blackboard_publisher_free(BHandle bp);
-int blackboard_publisher_test(BHandle bp, int i);
+bool blackboard_publish_message(BHandle bp, const struct Message *message);
 
 #ifdef __cplusplus
 }
