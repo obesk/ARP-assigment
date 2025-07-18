@@ -9,28 +9,29 @@ extern "C" {
 
 #include "logging.h"
 
-BHandle blackboard_publisher_create() {
+BPubHandle blackboard_publisher_create() {
 	std::cerr << "blackboard publisher creation" << std::endl;
-	const BHandle handle =  new BlackboardPublisher();
+	const BPubHandle handle =  new BlackboardPublisher();
 	std::cerr << "blackboard publisher created" << std::endl;
 	return handle;
 }
 
-bool blackboard_publisher_init(BHandle bp) {
+bool blackboard_publisher_init(BPubHandle bp) {
 	std::cerr << "blackboard publisher initialization" << std::endl;
 	const bool ok = bp->init();
 	std::cerr << "blackboard publisher initialized" << std::endl;
 	return ok;
 }
 
-void blackboard_publisher_free(BHandle bp) {
+void blackboard_publisher_free(BPubHandle bp) {
 	delete bp;
 }
 
-bool blackboard_publish_message(BHandle bp, const struct Message *message) {
+bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 	std::cerr << "composing message" << std::endl;
 	DDSPayload payload {};
 	switch (message->sector) {
+		//TODO: not all sectors managed
 		case SECTOR_DRONE_POSITION: {
 			std::cerr << "drone position" << std::endl;
 			const struct Vec2D drone_position = message->payload.drone_position;
