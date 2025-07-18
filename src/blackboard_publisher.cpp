@@ -26,10 +26,24 @@ BlackboardPublisher::~BlackboardPublisher() {
 	DomainParticipantFactory::get_instance()->delete_participant(participant_);
 }
 
-bool BlackboardPublisher::init() {
-	DomainParticipantQos participantQos;
-	participantQos.name("BlackboardPublisher");
-	participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
+bool BlackboardPublisher::init(std::array<uint32_t, 4> server_ip, int server_port) {
+	DomainParticipantQos client_qos = PARTICIPANT_QOS_DEFAULT;
+
+    client_qos.wire_protocol().builtin.discovery_config.discoveryProtocol =
+             DiscoveryProtocol::CLIENT;
+
+     // Set SERVER's listening locator for PDP
+    Locator_t locator;
+    IPLocator::setIPv4(locator, server_ip[0], server_ip[1], server_ip[2], server_ip[3]);
+    locator.port = server_port;
+
+     client_qos.wire_protocol().builtin.discovery_config.m_DiscoveryServers.push_back(locator);
+
+     // Set ping period to 250 ms
+     client_qos.wire_protocol().builtin.discovery_config.discoveryServer_client_syncperiod =
+         Duration_t(0, 250000000);
+
+	participant_ = DomainParticipantFactory::get_instance()->create_participant(0, client_qos);
 
 	if (participant_ == nullptr) {
 		return false;
@@ -39,7 +53,7 @@ bool BlackboardPublisher::init() {
 	type_.register_type(participant_);
 
 	// Create the publications Topic
-	topic_ = participant_->create_topic("BlackboardTopic", "DDSMessage", TOPIC_QOS_DEFAULT);
+	topic_ = participant_->create_topic("BlackboardTopic", type_.get_type_name(), TOPIC_QOS_DEFAULT);
 	if (topic_ == nullptr) {
 		return false;
 	}

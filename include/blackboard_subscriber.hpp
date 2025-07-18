@@ -8,11 +8,14 @@
 #include <fastdds/dds/subscriber/DataReader.hpp>
 #include <fastdds/dds/subscriber/DataReaderListener.hpp>
 #include <fastdds/dds/subscriber/qos/DataReaderQos.hpp>
+#include <fastdds/rtps/transport/TCPv4TransportDescriptor.hpp>
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
 
+
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::rtps;
 
 //TODO: move to .cpp
 
@@ -82,10 +85,26 @@ public:
     }
 
     //!Initialize the subscriber
-    bool init() {
-        DomainParticipantQos participantQos;
-        participantQos.name("Participant_subscriber");
-        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
+    bool init(std::array<uint32_t, 4> server_ip, std::array<uint32_t, 4> client_ip, int server_port, int client_port) {
+        DomainParticipantQos server_qos = PARTICIPANT_QOS_DEFAULT;
+
+        // Set participant as SERVER
+        server_qos.wire_protocol().builtin.discovery_config.discoveryProtocol =
+                DiscoveryProtocol::SERVER;
+
+        // Set SERVER's listening locator for PDP
+        Locator_t locator;
+        IPLocator::setIPv4(locator, server_ip[0], server_ip[1], server_ip[2], server_ip[3]);
+        locator.port = server_port;
+        server_qos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(locator);
+
+        /* Add a remote serve to which this server will connect */
+        // Set remote SERVER's listening locator for PDP
+        Locator_t remote_locator;
+        IPLocator::setIPv4(remote_locator, client_ip[0], client_ip[1], client_ip[2], client_ip[3]);
+        remote_locator.port = client_port;
+
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, server_qos);
 
         if (participant_ == nullptr) {
             return false;
@@ -95,7 +114,7 @@ public:
         type_.register_type(participant_);
 
         // Create the subscriptions Topic
-        topic_ = participant_->create_topic("BlackboardTopic", "DDSMessage", TOPIC_QOS_DEFAULT);
+        topic_ = participant_->create_topic("BlackboardTopic", type_.get_type_name(), TOPIC_QOS_DEFAULT);
 
         if (topic_ == nullptr) {
             return false;

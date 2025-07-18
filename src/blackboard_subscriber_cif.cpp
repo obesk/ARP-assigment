@@ -18,7 +18,7 @@ BSubHandle blackboard_subscriber_create() {
 
 bool blackboard_subscriber_init(BSubHandle bs) {
 	std::cerr << "blackboard subscriber initialization" << std::endl;
-	const bool ok = bs->init();
+	const bool ok = bs->init({127, 0, 0, 1}, {127, 0, 0, 1}, 11812, 11813);
 	std::cerr << "blackboard subscriber initialized" << std::endl;
 	return ok;
 }

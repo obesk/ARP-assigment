@@ -15,6 +15,7 @@
 
 //TODO: better not to use this
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::rtps;
 
 class BlackboardPublisher {
  private:
@@ -49,7 +50,7 @@ class BlackboardPublisher {
 	BlackboardPublisher();
 	virtual ~BlackboardPublisher();
 
-	bool init();
+	bool init(std::array<uint32_t, 4> server_ip, int server_port);
 	bool publish(DDSMessage message);
 };
 

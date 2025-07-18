@@ -18,7 +18,7 @@ BPubHandle blackboard_publisher_create() {
 
 bool blackboard_publisher_init(BPubHandle bp) {
 	std::cerr << "blackboard publisher initialization" << std::endl;
-	const bool ok = bp->init();
+	const bool ok = bp->init({127, 0, 0, 1}, 11812);
 	std::cerr << "blackboard publisher initialized" << std::endl;
 	return ok;
 }
