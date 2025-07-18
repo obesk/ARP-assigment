@@ -1,6 +1,4 @@
-CC = gcc
-CXX = g++
-
+# useful dirs
 BIN_DIR = bin
 BUILD_DIR = build
 CC_BUILD_DIR = $(BUILD_DIR)/c
@@ -8,6 +6,8 @@ CXX_BUILD_DIR = $(BUILD_DIR)/cpp
 IDL_DIR = idl
 IDL_BUILD_DIR = $(BUILD_DIR)/idl
 
+CC = gcc
+CXX = g++
 CFLAGS = -Iinclude -Wall -Wextra -Wpedantic
 CXXFLAGS = -std=c++11  -Iinclude -I$(IDL_BUILD_DIR) -I/usr/local/include/fastdds -I/usr/local/include/fastcdr
 LDFLAGS = -lm -lncurses -lcjson
@@ -39,16 +39,19 @@ TARGETS_SRC = src/targets_process.c $(LIB_SRC)
 OBSTACLES_SRC = src/obstacles_process.c $(LIB_SRC)
 WATCHDOG_SRC = src/watchdog_process.c $(LIB_SRC)
 
+PUBSUB_SRC = src/blackboard_publisher.cpp
+
+# This "predicts" the names of the generated files from fastdds
 IDL_SRC = $(patsubst $(IDL_DIR)/%.idl,$(IDL_BUILD_DIR)/%TypeObjectSupport.cxx,$(IDL_FILES)) \
 	$(patsubst $(IDL_DIR)/%.idl,$(IDL_BUILD_DIR)/%PubSubTypes.cxx,$(IDL_FILES))
 
-FASTDDS_OBJ = $(patsubst $(IDL_BUILD_DIR)/%.cxx,$(IDL_BUILD_DIR)/%.o,$(IDL_SRC))
+FASTDDS_OBJ = $(patsubst $(IDL_BUILD_DIR)/%.cxx,$(IDL_BUILD_DIR)/%.o,$(IDL_SRC)) \
+	$(patsubst src/%.cpp,$(CXX_BUILD_DIR)/%.o,$(PUBSUB_SRC))
 
 # Object files for each executable
 SPAWNER_OBJ = $(patsubst src/%.c,$(CC_BUILD_DIR)/%.o,$(SPAWNER_SRC))
 BLACKBOARD_OBJ = $(patsubst src/%.c,$(CC_BUILD_DIR)/%.o,$(BLACKBOARD_SRC)) \
-	$(FASTDDS_OBJ) \
-	$(CXX_BUILD_DIR)/blackboard_publisher.o
+	$(FASTDDS_OBJ)
 DRONE_OBJ = $(patsubst src/%.c,$(CC_BUILD_DIR)/%.o,$(DRONE_SRC))
 INPUT_OBJ = $(patsubst src/%.c,$(CC_BUILD_DIR)/%.o,$(INPUT_SRC))
 MAP_OBJ = $(patsubst src/%.c,$(CC_BUILD_DIR)/%.o,$(MAP_SRC))
@@ -96,6 +99,8 @@ $(CXX_BUILD_DIR)/%.o: src/%.cpp | $(CXX_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 # Generate IDL files for fastdss
+# Both rules will generate all the files, they are repeated so that the first 
+# needed is used 
 $(IDL_BUILD_DIR)/%TypeObjectSupport.cxx: $(IDL_DIR)/%.idl | $(IDL_BUILD_DIR)
 	fastddsgen $< -flat-output-dir -d $(IDL_BUILD_DIR)
 
