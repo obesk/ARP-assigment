@@ -9,6 +9,8 @@
 #include "logging.h"
 #include "pfds.h"
 
+#include "blackboard_publisher_cif.h"
+
 #include <stdbool.h>
 #include <string.h>
 
@@ -34,6 +36,9 @@ int loadJSONConfig(struct Config *const c);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
+
+	BHandle h = blackboard_publisher_create();
+	blackboard_publisher_free(h);
 
 	watchdog_register_term_handler();
 

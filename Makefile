@@ -39,7 +39,7 @@ TARGETS_SRC = src/targets_process.c $(LIB_SRC)
 OBSTACLES_SRC = src/obstacles_process.c $(LIB_SRC)
 WATCHDOG_SRC = src/watchdog_process.c $(LIB_SRC)
 
-PUBSUB_SRC = src/blackboard_publisher.cpp
+PUBSUB_SRC = src/blackboard_publisher.cpp src/blackboard_publisher_cif.cpp
 
 # This "predicts" the names of the generated files from fastdds
 IDL_SRC = $(patsubst $(IDL_DIR)/%.idl,$(IDL_BUILD_DIR)/%TypeObjectSupport.cxx,$(IDL_FILES)) \

@@ -1,5 +1,5 @@
-#ifndef BLACKBOARD_PUBLISHER_H
-#define BLACKBOARD_PUBLISHER_H
+#ifndef BLACKBOARD_PUBLISHER_HPP
+#define BLACKBOARD_PUBLISHER_HPP
 
 #include "message.hpp"
 #include "messagePubSubTypes.hpp"
@@ -24,7 +24,7 @@ class BlackboardPublisher {
 	Topic* topic_;
 	DataWriter* writer_;
 	TypeSupport type_;
-	// TODO: should probably implement outside
+
 	class PubListener : public DataWriterListener {
 	 public:
 		PubListener():
@@ -58,11 +58,5 @@ class BlackboardPublisher {
 
 };
 
+#endif //BLACKBARD_PUBLISHER_HPP
 
-extern "C" {
-
-int hello();
-
-}
-
-#endif
