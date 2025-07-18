@@ -27,7 +27,8 @@ WATCHDOG = $(BIN_DIR)/watchdog
 IDL_FILES = $(wildcard $(IDL_DIR)/*.idl)
 
 #c files of the libraries
-LIB_SRC = src/pfds.c src/processes.c src/watchdog.c src/blackboard.c src/keys.c src/time_management.c src/vec2d.c
+LIB_SRC = src/pfds.c src/processes.c src/watchdog.c src/blackboard.c src/keys.c \
+	src/time_management.c src/vec2d.c src/config.c
 
 # Source files for each executable
 SPAWNER_SRC = src/spawner.c $(LIB_SRC)

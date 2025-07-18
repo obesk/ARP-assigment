@@ -8,19 +8,19 @@
 #include "blackboard.h"
 #include "logging.h"
 #include "pfds.h"
+#include "config.h"
 
 #include "blackboard_publisher_cif.h"
 #include "blackboard_subscriber_cif.h"
 
+
 #include <stdbool.h>
 #include <string.h>
-
-#include <cjson/cJSON.h>
 #include <stdlib.h>
+
 
 #define PERIOD process_periods[PROCESS_BLACKBOARD]
 // TODO: this needs to be dimensioned correctly
-#define JSON_MAX_FILE_SIZE 1000
 
 struct Blackboard {
 	struct Drone drone;
@@ -32,8 +32,6 @@ struct Blackboard {
 
 struct Message messageManage(const struct Message *const msg,
 							struct Blackboard *const b);
-
-int loadJSONConfig(struct Config *const c);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
@@ -51,7 +49,6 @@ int main(int argc, char **argv) {
 		.drone.position.y = GEOFENCE / 2.,
 	};
 	loadJSONConfig(&blackboard.config);
-
 	log_message(LOG_INFO, "loaded config");
 
 	// read and write for each processes
@@ -133,99 +130,6 @@ int main(int argc, char **argv) {
 	closeAllPFDs(&pfds);
 
 	return 0;
-}
-
-int loadJSONConfig(struct Config *const c) {
-	FILE *file;
-	char jsonBuffer[JSON_MAX_FILE_SIZE];
-
-	file = fopen("appsettings.json", "r");
-
-	log_message(LOG_INFO, "Opened file");
-
-	if (file == NULL) {
-		log_message(LOG_ERROR, "Error opening the file");
-		return EXIT_FAILURE;
-	}
-
-	int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), file);
-	if (!len) {
-		log_message(LOG_ERROR, "Error reading the file");
-		return EXIT_FAILURE;
-	}
-	log_message(LOG_INFO, "Read file");
-
-	cJSON *json = cJSON_Parse(jsonBuffer);
-	log_message(LOG_INFO, "Parsed json");
-
-	if (json == NULL) {
-		log_message(LOG_ERROR, "Error parsing the file");
-		return EXIT_FAILURE;
-	}
-
-	log_message(LOG_INFO, "No errors in parsing");
-
-	c->n_obstacles =
-		cJSON_GetObjectItemCaseSensitive(json, "n_obstacles")->valueint;
-	if (c->n_obstacles < 0 || c->n_obstacles > MAX_OBSTACLES) {
-		log_message(LOG_ERROR,
-					"Value specified for numer of obstacles in settings is not"
-					"valid, setting it to %d",
-					MAX_OBSTACLES);
-	}
-
-	c->n_targets =
-		cJSON_GetObjectItemCaseSensitive(json, "n_targets")->valueint;
-	if (c->n_targets < 0 || c->n_targets > MAX_TARGETS) {
-		log_message(
-			LOG_ERROR,
-			"Value specified for numer of targets in settings is not valid,"
-			"setting it to %d",
-			MAX_TARGETS);
-	}
-
-	c->force_applied_N =
-		cJSON_GetObjectItemCaseSensitive(json, "force_applied_N")->valuedouble;
-	c->drone_mass =
-		cJSON_GetObjectItemCaseSensitive(json, "drone_mass_kg")->valuedouble;
-	c->viscous_coefficient =
-		cJSON_GetObjectItemCaseSensitive(json, "viscous_coefficient_Nms")
-			->valuedouble;
-
-	c->max_obstacle_distance =
-		cJSON_GetObjectItemCaseSensitive(json, "max_obstacle_distance_m")
-			->valuedouble;
-	c->min_obstacle_distance =
-		cJSON_GetObjectItemCaseSensitive(json, "min_obstacle_distance_m")
-			->valuedouble;
-
-	c->obstacle_repulsion_coeff =
-		cJSON_GetObjectItemCaseSensitive(json, "obstacle_repulsion_coeff")
-			->valuedouble;
-
-	c->max_target_distance =
-		cJSON_GetObjectItemCaseSensitive(json, "max_target_distance_m")
-			->valuedouble;
-	c->target_caught_distance =
-		cJSON_GetObjectItemCaseSensitive(json, "target_caught_distance_m")
-			->valuedouble;
-	c->target_attraction_coeff =
-		cJSON_GetObjectItemCaseSensitive(json, "target_attraction_coeff")
-			->valuedouble;
-
-	//TODO: manage split false/true
-	memset(c->active_processes, false, sizeof(bool) * PROCESS_N);
-	const cJSON *active_processes = cJSON_GetObjectItemCaseSensitive(json, "active_processes");
-	const cJSON *process;
-
-	cJSON_ArrayForEach(process, active_processes) {
-		c->active_processes[process->valueint] = true;
-	}
-
-	log_message(LOG_INFO, "read values");
-
-	fclose(file);
-	return true;
 }
 
 struct Message messageManage(const struct Message *const msg, struct Blackboard *const b) {

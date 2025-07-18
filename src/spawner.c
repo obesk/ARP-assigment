@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "pfds.h"
 #include "blackboard.h"
+#include "config.h"
 
 #include <string.h>
 #include <time.h>
@@ -99,11 +100,10 @@ int main(void) {
 		return 0;
 	}
 
-	// here the drone pfds are used, since the drone process is not yet started
-	// it's not a problem. It makes no sense to generate a pipe just for this 
-	// operation
-	const struct Config config =
-		blackboard_get_config(processes_pfds.write[0], processes_pfds.read[0]);
+	log_message(LOG_INFO, "reading config");
+
+	struct Config config;
+	loadJSONConfig(&config);
 
 	// spawning the other processes
 	for (int i = 0; i < PROCESS_N; ++i) {

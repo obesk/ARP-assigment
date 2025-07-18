@@ -5,6 +5,7 @@
 #include "target.h"
 #include "obstacle.h"
 #include "processes.h"
+#include "config.h"
 
 #include <stdbool.h>
 
@@ -29,26 +30,6 @@ enum Result {
 	RES_OK,
 	RES_REJ,
 	RES_ERR,
-};
-
-struct Config {
-	int n_obstacles;
-	int n_targets;
-
-	float force_applied_N;
-
-	float drone_mass;
-	float viscous_coefficient;
-
-	float max_obstacle_distance;
-	float min_obstacle_distance;
-	float obstacle_repulsion_coeff;
-
-	float max_target_distance;
-	float target_caught_distance;
-	float target_attraction_coeff;
-
-	bool active_processes[PROCESS_N];
 };
 
 union Payload {
