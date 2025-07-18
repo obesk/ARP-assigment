@@ -1,4 +1,7 @@
-#include "blackboard_publisher.h"
+#include "blackboard_publisher.hpp"
+
+#include "message.hpp"
+#include "messagePubSubTypes.hpp"
 
 BlackboardPublisher::BlackboardPublisher()
 	: participant_(nullptr)
@@ -81,7 +84,3 @@ void BlackboardPublisher::run(uint32_t samples) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 }
-
-int hello() {
-	return 1;
-};
