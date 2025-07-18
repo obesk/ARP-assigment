@@ -10,6 +10,7 @@
 #include "pfds.h"
 
 #include "blackboard_publisher_cif.h"
+#include "blackboard_subscriber_cif.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -29,16 +30,19 @@ struct Blackboard {
 	int score;
 };
 
-bool messageManage(const struct Message *const msg, struct Blackboard *const b,
-				   int wpfd);
+struct Message messageManage(const struct Message *const msg,
+							struct Blackboard *const b);
 
 int loadJSONConfig(struct Config *const c);
 
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
 
-	BHandle DDS_blackboard_publisher = blackboard_publisher_create();
+	BPubHandle DDS_blackboard_publisher = blackboard_publisher_create();
 	blackboard_publisher_init(DDS_blackboard_publisher);
+
+	BSubHandle DDS_blackboard_subscriber = blackboard_subscriber_create();
+	blackboard_subscriber_init(DDS_blackboard_subscriber);
 
 	watchdog_register_term_handler();
 
@@ -96,12 +100,21 @@ int main(int argc, char **argv) {
 								pfds.read[i], i);
 					const struct Message msg = messageRead(pfds.read[i]);
 
-					messageManage(&msg, &blackboard, pfds.write[i]);
+					const struct Message resp_msg =
+						 messageManage(&msg, &blackboard);
+					messageWrite(&resp_msg, pfds.write[i]);
 					if(msg.type == TYPE_SET) {
 						blackboard_publish_message(DDS_blackboard_publisher, &msg);
 					}
 				}
 			}
+		}
+
+		if (blackboard_subscriber_has_message(DDS_blackboard_subscriber)) {
+			log_message(LOG_INFO, "received update message from blackboard");
+			const struct Message received_msg = 
+				blackboard_subscriber_get_message(DDS_blackboard_subscriber);
+			messageManage(&received_msg, &blackboard);
 		}
 
 		clock_gettime(CLOCK_REALTIME, &ts_end_exec);
@@ -215,8 +228,7 @@ int loadJSONConfig(struct Config *const c) {
 	return true;
 }
 
-bool messageManage(const struct Message *const msg, struct Blackboard *const b,
-				   int wpfd) {
+struct Message messageManage(const struct Message *const msg, struct Blackboard *const b) {
 	struct Message response;
 	response.sector = msg->sector;
 
@@ -278,5 +290,5 @@ bool messageManage(const struct Message *const msg, struct Blackboard *const b,
 			response = reject_msg;
 		}
 	}
-	return messageWrite(&response, wpfd);
+	return response;
 }

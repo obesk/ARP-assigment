@@ -11,12 +11,12 @@ extern "C" {
 
 #include <stdbool.h>
 
-typedef struct BlackboardPublisher *BHandle;
+typedef struct BlackboardPublisher *BPubHandle;
 
-BHandle blackboard_publisher_create();
-bool blackboard_publisher_init(BHandle bp);
-void blackboard_publisher_free(BHandle bp);
-bool blackboard_publish_message(BHandle bp, const struct Message *message);
+BPubHandle blackboard_publisher_create();
+bool blackboard_publisher_init(BPubHandle bp);
+void blackboard_publisher_free(BPubHandle bp);
+bool blackboard_publish_message(BPubHandle bp, const struct Message *message);
 
 #ifdef __cplusplus
 }
