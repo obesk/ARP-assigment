@@ -10,16 +10,16 @@ extern "C" {
 #include "logging.h"
 
 BSubHandle blackboard_subscriber_create() {
-	std::cerr << "blackboard subscriber creation" << std::endl;
+	//std::cerr << "blackboard subscriber creation" << std::endl;
 	const BSubHandle handle =  new BlackboardSubscriber();
-	std::cerr << "blackboard subscriber created" << std::endl;
+	//std::cerr << "blackboard subscriber created" << std::endl;
 	return handle;
 }
 
 bool blackboard_subscriber_init(BSubHandle bs) {
-	std::cerr << "blackboard subscriber initialization" << std::endl;
+	//std::cerr << "blackboard subscriber initialization" << std::endl;
 	const bool ok = bs->init({127, 0, 0, 1}, {127, 0, 0, 1}, 11812, 11813);
-	std::cerr << "blackboard subscriber initialized" << std::endl;
+	//std::cerr << "blackboard subscriber initialized" << std::endl;
 	return ok;
 }
 

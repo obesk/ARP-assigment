@@ -32,16 +32,17 @@ class BlackboardPublisher {
 		}
 		~PubListener() override { }
 		void on_publication_matched(DataWriter*, const PublicationMatchedStatus& info) override {
+			// TODO: convert to log messages
 			if (info.current_count_change == 1) {
 				matched_ = info.total_count;
-				std::cout << "Publisher matched." << std::endl;
+				// std::cout << "Publisher matched." << std::endl;
 			}
 			else if (info.current_count_change == -1) {
 				matched_ = info.total_count;
-				std::cout << "Publisher unmatched." << std::endl;
+				// std::cout << "Publisher unmatched." << std::endl;
 			} else {
-				std::cout << info.current_count_change
-					<< " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
+				// std::cout << info.current_count_change
+				// 	<< " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
 			}
 		}
 		std::atomic_int matched_;

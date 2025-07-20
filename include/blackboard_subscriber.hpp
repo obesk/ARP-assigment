@@ -38,12 +38,12 @@ private:
                 DataReader*,
                 const SubscriptionMatchedStatus& info) override {
             if (info.current_count_change == 1) {
-                std::cerr << "Subscriber matched." << std::endl;
+                // //std::cerr << "Subscriber matched." << std::endl;
             } else if (info.current_count_change == -1) {
-                std::cerr << "Subscriber unmatched." << std::endl;
+                // //std::cerr << "Subscriber unmatched." << std::endl;
             } else {
-                std::cerr << info.current_count_change
-                          << " is not a valid value for SubscriptionMatchedStatus current count change" << std::endl;
+                //std::cerr << info.current_count_change
+                        //   << " is not a valid value for SubscriptionMatchedStatus current count change" << std::endl;
             }
         }
 
@@ -52,7 +52,7 @@ private:
             if (reader->take_next_sample(&message_, &info) == eprosima::fastdds::dds::RETCODE_OK) {
                 if (info.valid_data) {
                     new_data_ = true;
-                    std::cerr << "Message with _d: " << (int) message_.payload()._d() << std::endl;
+                    //std::cerr << "Message with _d: " << (int) message_.payload()._d() << std::endl;
                 }
             }
         }
