@@ -62,6 +62,32 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 			std::cerr << "payload initialized" << std::endl;
 		 }
 		 break;
+		case SECTOR_TARGETS: {
+			const struct Targets targets = message->payload.targets;
+			std::vector<DDSVec2D> dds_targets;
+			dds_targets.reserve(targets.n);
+			for (int i = 0; i < targets.n; ++i) {
+				DDSVec2D target {};
+				target.x(targets.targets[i].x);
+				target.y(targets.targets[i].y);
+				dds_targets.push_back(target);
+			}
+			std::cerr << "targets published" <<std::endl;
+		 }
+		 break;
+		case SECTOR_OBSTACLES: {
+			const struct Obstacles obstacles = message->payload.obstacles;
+			std::vector<DDSVec2D> dds_obstacles;
+			dds_obstacles.reserve(obstacles.n);
+			for (int i = 0; i < obstacles.n; ++i) {
+				DDSVec2D obstacle {};
+				obstacle.x(obstacles.obstacles[i].x);
+				obstacle.y(obstacles.obstacles[i].y);
+				dds_obstacles.push_back(obstacle);
+			}
+			std::cerr << "obstacles published" <<std::endl;
+		 }
+		 break;
 		default:
 			return false;
 	} 

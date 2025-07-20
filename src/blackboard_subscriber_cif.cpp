@@ -55,10 +55,26 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 			msg.payload.drone_actual_force = (struct Vec2D) { dds_drone_actual_force.x(), dds_drone_actual_force.y() };
 		}
 		 break;
-
-		//TODO: finish this
-		// case DDSMemorySector::TARGETS:
-		// case DDSMemorySector::OBSTACLES:
+		case DDSMemorySector::TARGETS: {
+			const std::vector<DDSVec2D> dds_targets =
+				dds_msg.payload().targets();
+			msg.sector = SECTOR_TARGETS;
+			for (int i = 0; i < dds_targets.size(); ++i) {
+				msg.payload.targets.targets[i] = 
+					{dds_targets[i].x(), dds_targets[i].y()};
+			}
+		}
+		 break;
+		case DDSMemorySector::OBSTACLES: {
+			const std::vector<DDSVec2D> dds_obstacles =
+				dds_msg.payload().obstacles();
+			msg.sector = SECTOR_OBSTACLES;
+			for (int i = 0; i < dds_obstacles.size(); ++i) {
+				msg.payload.obstacles.obstacles[i] = 
+					{dds_obstacles[i].x(), dds_obstacles[i].y()};
+			}
+		}
+		 break;
 		default:
 			return error_msg;
 	}

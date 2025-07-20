@@ -22,6 +22,10 @@ union DDSPayload switch (DDSMemorySector) {
 		DDSVec2D drone_force;
 	case DRONE_ACTUAL_FORCE:
 		DDSVec2D drone_actual_force;
+	case TARGETS:
+		sequence<DDSVec2D> targets;
+	case OBSTACLES:
+		sequence<DDSVec2D> obstacles;
 };
 
 struct DDSMessage {
