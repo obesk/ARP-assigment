@@ -44,7 +44,7 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 	struct Message msg {};
 	msg.type = TYPE_SET;
 
-	log_message(LOG_INFO, "received message with sector: %d", 
+	log_message(LOG_INFO, "got message with sector: %d", 
 		(int)dds_msg.payload()._d());
 
 	switch(dds_msg.payload()._d()) {

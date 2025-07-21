@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <thread>
+#include <unordered_map>
 
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
@@ -51,19 +52,21 @@ private:
 
         void on_data_available(DataReader* reader) override {
             SampleInfo info;
-            messages.emplace_back();
-            if (reader->take_next_sample(&messages.back(), &info) 
+            DDSMessage msg;
+            if (reader->take_next_sample(&msg, &info) 
                 == eprosima::fastdds::dds::RETCODE_OK) {
-                if (!info.valid_data) {
-                    messages.pop_back();
+                if (info.valid_data) {
+                    log_message(LOG_DEBUG, "received ok message");
+                    message_order.push_back(msg.payload()._d());
+                    message_queue[msg.payload()._d()] = msg;
+                } else {
                     log_message(LOG_ERROR, "error while receiving message: "
                         "invalid data");
-                } else {
-                    log_message(LOG_INFO, "received ok message");
                 }
             }
         }
-        std::deque<DDSMessage> messages;
+        std::unordered_map<DDSMemorySector, DDSMessage> message_queue;
+        std::deque<DDSMemorySector> message_order;
     }
     listener_;
 
@@ -146,13 +149,21 @@ public:
     }
 
     bool has_new_data() {
-        return not listener_.messages.empty();
+        return not listener_.message_queue.empty();
     }
 
     DDSMessage get_message() {
-        const DDSMessage msg = listener_.messages.front();
-        listener_.messages.pop_front();
-        return msg;
+        while (!listener_.message_order.empty()) {
+            const DDSMemorySector key = listener_.message_order.front();
+            listener_.message_order.pop_front();
+            const auto elem = listener_.message_queue.find(key);
+            if(elem != listener_.message_queue.end()) {
+                DDSMessage return_value = elem->second;
+                listener_.message_queue.erase(elem->first);
+                return return_value;
+            }
+        }
+        return DDSMessage{};
     }
 
 };
