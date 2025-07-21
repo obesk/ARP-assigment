@@ -36,6 +36,8 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 	struct Message msg {};
 	msg.type = TYPE_SET;
 
+	std::cerr << "received message with sector: " << (int)dds_msg.payload()._d() << std::endl;
+
 	switch(dds_msg.payload()._d()) {
 		case DDSMemorySector::DRONE_POSITION: {
 			const DDSVec2D dds_drone_position = dds_msg.payload().drone_position();
@@ -63,6 +65,8 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 				msg.payload.targets.targets[i] = 
 					{dds_targets[i].x(), dds_targets[i].y()};
 			}
+			msg.payload.targets.n = dds_targets.size();
+			std::cerr << "received targets" << std::endl; 
 		}
 		 break;
 		case DDSMemorySector::OBSTACLES: {
@@ -73,6 +77,8 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 				msg.payload.obstacles.obstacles[i] = 
 					{dds_obstacles[i].x(), dds_obstacles[i].y()};
 			}
+			msg.payload.obstacles.n = dds_obstacles.size();
+			std::cerr << "received obstacles" << std::endl; 
 		}
 		 break;
 		default:

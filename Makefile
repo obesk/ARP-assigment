@@ -129,6 +129,6 @@ clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR) *.log
 
 kill:
-	killall drone; killall blackboard; killall input; killall map; killall spawner; killall targets; killall obstacles; killall watchdog
+	killall -s KILL drone blackboard input map spawner targets obstacles watchdog
 
 

@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (blackboard_subscriber_has_message(DDS_blackboard_subscriber)) {
+		while (blackboard_subscriber_has_message(DDS_blackboard_subscriber)) {
 			log_message(LOG_INFO, "received update message from blackboard");
 			const struct Message received_msg = 
 				blackboard_subscriber_get_message(DDS_blackboard_subscriber);

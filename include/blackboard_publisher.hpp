@@ -35,7 +35,7 @@ class BlackboardPublisher {
 			// TODO: convert to log messages
 			if (info.current_count_change == 1) {
 				matched_ = info.total_count;
-				// std::cout << "Publisher matched." << std::endl;
+				std::cout << "Publisher matched." << std::endl;
 			}
 			else if (info.current_count_change == -1) {
 				matched_ = info.total_count;

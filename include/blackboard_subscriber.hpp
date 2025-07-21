@@ -38,26 +38,28 @@ private:
                 DataReader*,
                 const SubscriptionMatchedStatus& info) override {
             if (info.current_count_change == 1) {
-                // //std::cerr << "Subscriber matched." << std::endl;
+                std::cerr << "Subscriber matched." << std::endl;
             } else if (info.current_count_change == -1) {
-                // //std::cerr << "Subscriber unmatched." << std::endl;
+                std::cerr << "Subscriber unmatched." << std::endl;
             } else {
-                //std::cerr << info.current_count_change
-                        //   << " is not a valid value for SubscriptionMatchedStatus current count change" << std::endl;
+                std::cerr << info.current_count_change
+                          << " is not a valid value for SubscriptionMatchedStatus current count change" << std::endl;
             }
         }
 
         void on_data_available(DataReader* reader) override {
             SampleInfo info;
-            if (reader->take_next_sample(&message_, &info) == eprosima::fastdds::dds::RETCODE_OK) {
-                if (info.valid_data) {
-                    new_data_ = true;
-                    //std::cerr << "Message with _d: " << (int) message_.payload()._d() << std::endl;
+            messages.emplace_back();
+            if (reader->take_next_sample(&messages.back(), &info) 
+                == eprosima::fastdds::dds::RETCODE_OK) {
+                if (!info.valid_data) {
+                    messages.pop_back();
+                } else {
+                    std::cerr << "received ok message" << std::endl;
                 }
             }
         }
-        DDSMessage message_;
-        bool new_data_;
+        std::deque<DDSMessage> messages;
     }
     listener_;
 
@@ -114,7 +116,7 @@ public:
         type_.register_type(participant_);
 
         // Create the subscriptions Topic
-        topic_ = participant_->create_topic("BlackboardTopic", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+        topic_ = participant_->create_topic("BlackboardTopic2", type_.get_type_name(), TOPIC_QOS_DEFAULT);
 
         if (topic_ == nullptr) {
             return false;
@@ -138,11 +140,13 @@ public:
     }
 
     bool has_new_data() {
-        return listener_.new_data_;
+        return not listener_.messages.empty();
     }
 
     DDSMessage get_message() {
-        return listener_.message_;
+        const DDSMessage msg = listener_.messages.front();
+        listener_.messages.pop_front();
+        return msg;
     }
 
 };
