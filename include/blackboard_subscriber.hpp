@@ -1,3 +1,4 @@
+#include "logging.h"
 #include "DDSMessagePubSubTypes.hpp"
 
 #include <chrono>
@@ -38,12 +39,13 @@ private:
                 DataReader*,
                 const SubscriptionMatchedStatus& info) override {
             if (info.current_count_change == 1) {
-                std::cerr << "Subscriber matched." << std::endl;
+                log_message(LOG_INFO, "subscriber matched") 
             } else if (info.current_count_change == -1) {
-                std::cerr << "Subscriber unmatched." << std::endl;
+                log_message(LOG_INFO, "subscriber unmatched");
             } else {
-                std::cerr << info.current_count_change
-                          << " is not a valid value for SubscriptionMatchedStatus current count change" << std::endl;
+                log_message(LOG_ERROR, "%d  is not a valid value for "
+                    "SubscriptionMatchedStatus current count change",
+                    info.current_count_change);
             }
         }
 
@@ -54,8 +56,10 @@ private:
                 == eprosima::fastdds::dds::RETCODE_OK) {
                 if (!info.valid_data) {
                     messages.pop_back();
+                    log_message(LOG_ERROR, "error while receiving message: "
+                        "invalid data");
                 } else {
-                    std::cerr << "received ok message" << std::endl;
+                    log_message(LOG_INFO, "received ok message");
                 }
             }
         }

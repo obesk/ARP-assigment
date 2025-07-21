@@ -1,5 +1,6 @@
 #include "blackboard_subscriber_cif.h"
 #include "blackboard_subscriber.hpp"
+#include "logging.h"
 
 extern "C" {
 
@@ -7,19 +8,17 @@ extern "C" {
 #define PROCESS_NAME "BLACKBOARD_SUBSCRIBER"
 #endif
 
-#include "logging.h"
-
 BSubHandle blackboard_subscriber_create() {
-	//std::cerr << "blackboard subscriber creation" << std::endl;
+	log_message(LOG_INFO, "blackboard subscriber creation");
 	const BSubHandle handle =  new BlackboardSubscriber();
-	//std::cerr << "blackboard subscriber created" << std::endl;
+	log_message(LOG_INFO, "blackboard subscriber created");
 	return handle;
 }
 
 bool blackboard_subscriber_init(BSubHandle bs) {
-	//std::cerr << "blackboard subscriber initialization" << std::endl;
+	log_message(LOG_INFO, "blackboard subscriber initialization");
 	const bool ok = bs->init({127, 0, 0, 1}, {127, 0, 0, 1}, 11812, 11813);
-	//std::cerr << "blackboard subscriber initialized" << std::endl;
+	log_message(LOG_INFO, "blackboard subscriber initialized");
 	return ok;
 }
 
@@ -36,7 +35,8 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 	struct Message msg {};
 	msg.type = TYPE_SET;
 
-	std::cerr << "received message with sector: " << (int)dds_msg.payload()._d() << std::endl;
+	log_message(LOG_INFO, "received message with sector: %d", 
+		(int)dds_msg.payload()._d());
 
 	switch(dds_msg.payload()._d()) {
 		case DDSMemorySector::DRONE_POSITION: {
@@ -66,7 +66,6 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 					{dds_targets[i].x(), dds_targets[i].y()};
 			}
 			msg.payload.targets.n = dds_targets.size();
-			std::cerr << "received targets" << std::endl; 
 		}
 		 break;
 		case DDSMemorySector::OBSTACLES: {
@@ -78,7 +77,6 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 					{dds_obstacles[i].x(), dds_obstacles[i].y()};
 			}
 			msg.payload.obstacles.n = dds_obstacles.size();
-			std::cerr << "received obstacles" << std::endl; 
 		}
 		 break;
 		default:

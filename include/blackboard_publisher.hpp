@@ -1,6 +1,8 @@
 #ifndef BLACKBOARD_PUBLISHER_HPP
 #define BLACKBOARD_PUBLISHER_HPP
 
+#include "logging.h"
+
 #include "DDSMessage.hpp"
 #include "DDSMessagePubSubTypes.hpp"
 
@@ -35,14 +37,15 @@ class BlackboardPublisher {
 			// TODO: convert to log messages
 			if (info.current_count_change == 1) {
 				matched_ = info.total_count;
-				std::cout << "Publisher matched." << std::endl;
+				log_message(LOG_INFO, "publisher matched");
 			}
 			else if (info.current_count_change == -1) {
 				matched_ = info.total_count;
-				// std::cout << "Publisher unmatched." << std::endl;
+				log_message(LOG_INFO, "publisher unmatched");
 			} else {
-				// std::cout << info.current_count_change
-				// 	<< " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
+				log_message(LOG_ERROR, "%d is not a valid value for"
+					"PublicationMatchedStatus current count change.",
+					info.current_count_change);
 			}
 		}
 		std::atomic_int matched_;

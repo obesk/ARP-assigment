@@ -10,16 +10,14 @@ extern "C" {
 #include "logging.h"
 
 BPubHandle blackboard_publisher_create() {
-	std::cerr << "blackboard publisher creation" << std::endl;
 	const BPubHandle handle =  new BlackboardPublisher();
-	std::cerr << "blackboard publisher created" << std::endl;
+	log_message(LOG_INFO, "blackboard publisher created");
 	return handle;
 }
 
 bool blackboard_publisher_init(BPubHandle bp) {
-	//std::cerr << "blackboard publisher initialization" << std::endl;
 	const bool ok = bp->init({127, 0, 0, 1}, 11812);
-	//std::cerr << "blackboard publisher initialized" << std::endl;
+	log_message(LOG_INFO, "blackboard publisher initialized");
 	return ok;
 }
 
@@ -28,12 +26,10 @@ void blackboard_publisher_free(BPubHandle bp) {
 }
 
 bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
-	//std::cerr << "composing message" << std::endl;
 	DDSPayload payload {};
+	std::string thing;
 	switch (message->sector) {
-		//TODO: not all sectors managed
 		case SECTOR_DRONE_POSITION: {
-			//std::cerr << "drone position" << std::endl;
 			const struct Vec2D drone_position = message->payload.drone_position;
 			DDSVec2D dds_drone_position {};
 			dds_drone_position.x(drone_position.x);
@@ -42,7 +38,6 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 		 }
 		 break;
 		case SECTOR_DRONE_FORCE: {
-			//std::cerr << "drone force" << std::endl;
 			const struct Vec2D drone_force = message->payload.drone_force;
 			DDSVec2D dds_drone_force {};
 			dds_drone_force.x(drone_force.x);
@@ -51,15 +46,12 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 		 }
 		 break;
 		case SECTOR_DRONE_ACTUAL_FORCE: {
-			//std::cerr << "drone actual force" << std::endl;
 			const struct Vec2D drone_actual_force = 
 				message->payload.drone_actual_force;
 			DDSVec2D dds_drone_actual_force {};
 			dds_drone_actual_force.x(drone_actual_force.x);
 			dds_drone_actual_force.y(drone_actual_force.y);
-			//std::cerr << "actual force initialized" << std::endl;
 			payload.drone_actual_force(dds_drone_actual_force);
-			//std::cerr << "payload initialized" << std::endl;
 		 }
 		 break;
 		case SECTOR_TARGETS: {
@@ -72,7 +64,8 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 				target.y(targets.targets[i].y);
 				dds_targets.push_back(target);
 			}
-			//std::cerr << "targets published" <<std::endl;
+			payload.targets(dds_targets);
+			thing = "targts";
 		 }
 		 break;
 		case SECTOR_OBSTACLES: {
@@ -85,7 +78,8 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 				obstacle.y(obstacles.obstacles[i].y);
 				dds_obstacles.push_back(obstacle);
 			}
-			//std::cerr << "obstacles published" <<std::endl;
+			payload.obstacles(dds_obstacles);
+			thing = "obstacles";
 		 }
 		 break;
 		default:
@@ -93,7 +87,10 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 	} 
 	DDSMessage dds_message {};
 	dds_message.payload(payload);
-	return bp->publish(dds_message);
+	bool ok = bp->publish(dds_message);
+	log_message(LOG_INFO, "%s published", thing.c_str());
+	return ok;
+
 }
 
 
