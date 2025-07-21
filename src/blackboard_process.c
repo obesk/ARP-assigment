@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 						 messageManage(&msg, &blackboard);
 					messageWrite(&resp_msg, pfds.write[i]);
 					if(msg.type == TYPE_SET) {
-						blackboard_publish_message(DDS_blackboard_publisher, &msg);
+						blackboard_queue_message(DDS_blackboard_publisher, &msg);
 					}
 				}
 			}
@@ -118,6 +118,8 @@ int main(int argc, char **argv) {
 				blackboard_subscriber_get_message(DDS_blackboard_subscriber);
 			messageManage(&received_msg, &blackboard);
 		}
+
+		blackboard_try_publishing_messages(DDS_blackboard_publisher);
 
 		clock_gettime(CLOCK_REALTIME, &ts_end_exec);
 		us_update_config_remaining -= ts_diff_us(ts_end_exec, ts_start_exec);

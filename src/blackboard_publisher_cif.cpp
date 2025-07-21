@@ -31,7 +31,7 @@ void blackboard_publisher_free(BPubHandle bp) {
 	delete bp;
 }
 
-bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
+bool blackboard_queue_message(BPubHandle bp, const struct Message *message) {
 	DDSPayload payload {};
 	std::string thing;
 	switch (message->sector) {
@@ -93,11 +93,14 @@ bool blackboard_publish_message(BPubHandle bp, const struct Message *message) {
 	} 
 	DDSMessage dds_message {};
 	dds_message.payload(payload);
-	bool ok = bp->publish(dds_message);
+	bool ok = bp->queue_message(dds_message);
 	log_message(LOG_INFO, "%s published", thing.c_str());
 	return ok;
 
 }
 
+bool blackboard_try_publishing_messages(BPubHandle bp) {
+	return bp->try_publishing_messages();
+}
 
 } // etxtern "C"

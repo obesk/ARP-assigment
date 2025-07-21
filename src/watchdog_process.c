@@ -15,7 +15,7 @@
 #define PERIOD 10000
 
 // factor to which we multiply the periods to generate the allowed inactive time
-#define WAIT_FACTOR 2
+#define WAIT_FACTOR 200
 
 // NOTE: the pid is not strictly necessary but prevents other processes to start
 // impersonating a process and detect conflicts

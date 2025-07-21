@@ -14,6 +14,7 @@
 #include <fastdds/dds/topic/TypeSupport.hpp>
 
 #include <thread>
+#include <unordered_map>
 
 //TODO: better not to use this
 using namespace eprosima::fastdds::dds;
@@ -26,6 +27,8 @@ class BlackboardPublisher {
 	Topic* topic_;
 	DataWriter* writer_;
 	TypeSupport type_;
+
+	std::unordered_map<DDSMemorySector, DDSMessage> message_queue;
 
 	class PubListener : public DataWriterListener {
 	 public:
@@ -55,7 +58,8 @@ class BlackboardPublisher {
 	virtual ~BlackboardPublisher();
 
 	bool init(std::array<uint32_t, 4> server_ip, int server_port);
-	bool publish(DDSMessage message);
+	bool queue_message(DDSMessage message);
+	bool try_publishing_messages();
 };
 
 #endif //BLACKBOARD_PUBLISHER_HPP

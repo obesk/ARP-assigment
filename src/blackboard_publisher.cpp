@@ -73,12 +73,21 @@ bool BlackboardPublisher::init(std::array<uint32_t, 4> server_ip, int server_por
 	return true;
 }
 
-bool BlackboardPublisher::publish(DDSMessage message) {
-	//TODO: is this the best way ?
-	while(listener_.matched_ <= 0); 
-	if (listener_.matched_ > 0) {
-		writer_->write(&message);
-		return true;
+bool BlackboardPublisher::queue_message(DDSMessage message) {
+	message_queue[message.payload()._d()] = message;
+	return true;
+}
+
+bool BlackboardPublisher::try_publishing_messages() {
+	if (listener_.matched_ <= 0) {
+		return false;
 	}
-	return false;
+
+	for (const std::pair<const DDSMemorySector, DDSMessage> elem : message_queue) {
+		if (writer_->write(&elem.second)) {
+			message_queue.erase(elem.first);
+		}
+	}
+
+	return message_queue.empty();
 }
