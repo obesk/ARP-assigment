@@ -73,11 +73,10 @@ bool BlackboardPublisher::init(std::array<uint32_t, 4> server_ip, int server_por
 }
 
 bool BlackboardPublisher::publish(DDSMessage message) {
-	std::cerr << "publish" << std::endl;
+	//TODO: is this the best way ?
+	while(listener_.matched_ <= 0); 
 	if (listener_.matched_ > 0) {
-		std::cerr << "writing message" << std::endl;
 		writer_->write(&message);
-		std::cerr << "message wrote" << std::endl;
 		return true;
 	}
 	return false;
