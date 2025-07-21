@@ -14,7 +14,8 @@ extern "C" {
 typedef struct BlackboardSubscriber *BSubHandle;
 
 BSubHandle blackboard_subscriber_create();
-bool blackboard_subscriber_init(BSubHandle bs);
+bool blackboard_subscriber_init(BSubHandle bs, int server_ip[4], int client_ip[4],
+     int server_port, int client_port);
 void blackboard_subscriber_free(BSubHandle bs);
 
 

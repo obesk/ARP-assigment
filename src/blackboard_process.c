@@ -36,20 +36,25 @@ struct Message messageManage(const struct Message *const msg,
 int main(int argc, char **argv) {
 	log_message(LOG_INFO, "Blackboard running");
 
-	BPubHandle DDS_blackboard_publisher = blackboard_publisher_create();
-	blackboard_publisher_init(DDS_blackboard_publisher);
-
-	BSubHandle DDS_blackboard_subscriber = blackboard_subscriber_create();
-	blackboard_subscriber_init(DDS_blackboard_subscriber);
-
-	watchdog_register_term_handler();
-
 	struct Blackboard blackboard = {
 		.drone.position.x = GEOFENCE / 2.,
 		.drone.position.y = GEOFENCE / 2.,
 	};
+
 	loadJSONConfig(&blackboard.config);
 	log_message(LOG_INFO, "loaded config");
+
+	BPubHandle DDS_blackboard_publisher = blackboard_publisher_create();
+	blackboard_publisher_init(DDS_blackboard_publisher,
+		blackboard.config.publisher_ip, blackboard.config.publisher_port);
+
+	BSubHandle DDS_blackboard_subscriber = blackboard_subscriber_create();
+	blackboard_subscriber_init(DDS_blackboard_subscriber,
+		blackboard.config.publisher_server_ip, blackboard.config.subscriber_ip,
+		blackboard.config.publisher_server_port, blackboard.config.subscriber_port
+	);
+
+	watchdog_register_term_handler();
 
 	// read and write for each processes
 	// +1 for the program name and +1 for the watchdog pid

@@ -11,6 +11,8 @@
 
 #define JSON_MAX_FILE_SIZE 1000
 
+bool read_ip(int *ip_addr, const cJSON *ip_blocks);
+
 int loadJSONConfig(struct Config *const c) {
 	FILE *file;
 	char jsonBuffer[JSON_MAX_FILE_SIZE];
@@ -97,8 +99,32 @@ int loadJSONConfig(struct Config *const c) {
 		c->active_processes[process->valueint] = true;
 	}
 
+	read_ip(c->publisher_ip,
+		 cJSON_GetObjectItemCaseSensitive(json, "publisher_ip"));
+	c->publisher_port = cJSON_GetObjectItemCaseSensitive(json,
+		 "publisher_port")->valueint;
+
+	read_ip(c->subscriber_ip,
+		 cJSON_GetObjectItemCaseSensitive(json, "subscriber_ip"));
+	c->subscriber_port = cJSON_GetObjectItemCaseSensitive(json,
+			 "subscriber_port")->valueint;
+
+	read_ip(c->publisher_server_ip,
+		 cJSON_GetObjectItemCaseSensitive(json, "pubisher_server_ip"));
+	c->publisher_server_port = cJSON_GetObjectItemCaseSensitive(json,
+		 "publisher_server_port")->valueint;
+
 	log_message(LOG_INFO, "read values");
 
 	fclose(file);
+	return true;
+}
+
+bool read_ip(int *ip_addr, const cJSON *ip_blocks) {
+	const cJSON *ip_block;
+	int *iter = ip_addr;
+	cJSON_ArrayForEach(ip_block, ip_blocks) {
+		*(iter++) = ip_block->valueint;
+	}
 	return true;
 }

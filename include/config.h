@@ -23,6 +23,13 @@ struct Config {
 	float target_attraction_coeff;
 
 	bool active_processes[PROCESS_N];
+
+	int publisher_ip[4];
+	int publisher_port;
+	int subscriber_ip[4];
+	int subscriber_port;
+	int publisher_server_ip[4];
+	int publisher_server_port;
 };
 
 int loadJSONConfig(struct Config *const c);

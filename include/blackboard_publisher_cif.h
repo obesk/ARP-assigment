@@ -14,7 +14,7 @@ extern "C" {
 typedef struct BlackboardPublisher *BPubHandle;
 
 BPubHandle blackboard_publisher_create();
-bool blackboard_publisher_init(BPubHandle bp);
+bool blackboard_publisher_init(BPubHandle bp, int ip[4], int port);
 void blackboard_publisher_free(BPubHandle bp);
 bool blackboard_publish_message(BPubHandle bp, const struct Message *message);
 
