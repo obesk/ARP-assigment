@@ -17,7 +17,10 @@ BPubHandle blackboard_publisher_create() {
 
 bool blackboard_publisher_init(BPubHandle bp, int ip[4], int port) {
 	std::array<uint32_t, 4> server_ip;
-	std::copy(ip, ip + 4, server_ip.begin());
+
+	for (int i = 0; i < 4; ++i) {
+		server_ip[i] = ip[i];
+	}
 
 	const bool ok = bp->init(server_ip, port);
 	log_message(LOG_INFO, "blackboard publisher initialized");

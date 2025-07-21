@@ -53,7 +53,8 @@ bool BlackboardPublisher::init(std::array<uint32_t, 4> server_ip, int server_por
 	type_.register_type(participant_);
 
 	// Create the publications Topic
-	topic_ = participant_->create_topic("BlackboardTopic", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+	topic_ = participant_->create_topic("BlackboardTopic" +
+		std::to_string(server_port), type_.get_type_name(), TOPIC_QOS_DEFAULT);
 	if (topic_ == nullptr) {
 		return false;
 	}

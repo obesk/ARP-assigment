@@ -15,11 +15,15 @@ BSubHandle blackboard_subscriber_create() {
 }
 
 bool blackboard_subscriber_init(BSubHandle bs, int server_ip[4],
-	 int client_ip[4], int server_port, int client_port) {
+	int client_ip[4], int server_port, int client_port) {
 	std::array<uint32_t, 4> arr_server_ip;
-	std::copy(server_ip, server_ip + 4, arr_server_ip.begin());
 	std::array<uint32_t, 4> arr_client_ip;
-	std::copy(client_ip, client_ip + 4, arr_client_ip.begin());
+
+	for (int i = 0; i < 4; ++i) {
+		arr_server_ip[i] = server_ip[i];
+		arr_client_ip[i] = client_ip[i];
+	}
+
 
 	const bool ok = bs->init(arr_server_ip, arr_client_ip,
 		 server_port, client_port);

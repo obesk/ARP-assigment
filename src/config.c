@@ -110,7 +110,7 @@ int loadJSONConfig(struct Config *const c) {
 			 "subscriber_port")->valueint;
 
 	read_ip(c->publisher_server_ip,
-		 cJSON_GetObjectItemCaseSensitive(json, "pubisher_server_ip"));
+		 cJSON_GetObjectItemCaseSensitive(json, "publisher_server_ip"));
 	c->publisher_server_port = cJSON_GetObjectItemCaseSensitive(json,
 		 "publisher_server_port")->valueint;
 
