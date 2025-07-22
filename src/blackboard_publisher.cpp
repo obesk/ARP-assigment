@@ -83,9 +83,11 @@ bool BlackboardPublisher::try_publishing_messages() {
 		return false;
 	}
 
-	for (const std::pair<const DDSMemorySector, DDSMessage> elem : message_queue) {
-		if (writer_->write(&elem.second)) {
-			message_queue.erase(elem.first);
+	for (auto it = message_queue.cbegin(); it != message_queue.cend(); ) {
+		if (writer_->write(&it->second) == RETCODE_OK) {
+			message_queue.erase(it++);
+		} else {
+			++it;
 		}
 	}
 

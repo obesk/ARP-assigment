@@ -68,6 +68,8 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 		 break;
 		case DDSMemorySector::SCORE: {
 			msg.payload.score = dds_msg.payload().score();
+			msg.sector = SECTOR_SCORE; 
+			std::cerr << "setting the score: " << msg.payload.score << std::endl;
 		}
 		 break;
 		case DDSMemorySector::TARGETS: {
