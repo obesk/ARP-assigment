@@ -99,15 +99,18 @@ int main(void) {
 
 		// checking if some processes are dead
 		for (int i = 0; i < WATCHED_PROCESSES; ++i) {
+			if(!hearthbeats[i].pid) {
+				continue;
+			}
 			const long elapsed_time_from_hearthbeat =
 				ts_diff_us(end_time_ts, hearthbeats[i].ts);
+
 
 			log_message(LOG_INFO,
 						"elapsed time from hearthbeat for process %d: %ld", i,
 						elapsed_time_from_hearthbeat);
 
-			if (hearthbeats[i].pid &&
-				elapsed_time_from_hearthbeat >
+			if (elapsed_time_from_hearthbeat >
 				process_periods[i] * WAIT_FACTOR) {
 				log_message(LOG_CRITICAL,
 							"process %d with pid %d has not managed to send a "
