@@ -60,11 +60,11 @@ bool blackboard_queue_message(BPubHandle bp, const struct Message *message) {
 			payload.drone_actual_force(dds_drone_actual_force);
 		 }
 		 break;
-		// case SECTOR_SCORE: {
-		// 	const int score = message->payload.score;
-		// 	payload.score(score);
-		// }
-		//  break;
+		case SECTOR_SCORE: {
+			const int score = message->payload.score;
+			payload.score(score);
+		}
+		 break;
 		case SECTOR_TARGETS: {
 			const struct Targets targets = message->payload.targets;
 			std::vector<DDSVec2D> dds_targets;

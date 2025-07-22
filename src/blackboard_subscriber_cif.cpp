@@ -65,10 +65,10 @@ struct Message blackboard_subscriber_get_message(BSubHandle bs) {
 			msg.sector = SECTOR_DRONE_ACTUAL_FORCE; 
 			msg.payload.drone_actual_force = (struct Vec2D) { dds_drone_actual_force.x(), dds_drone_actual_force.y() };
 		}
-		//  break;
-		// case DDSMemorySector::SCORE: {
-		// 	msg.payload.score = dds_msg.payload().score();
-		// }
+		 break;
+		case DDSMemorySector::SCORE: {
+			msg.payload.score = dds_msg.payload().score();
+		}
 		 break;
 		case DDSMemorySector::TARGETS: {
 			const std::vector<DDSVec2D> dds_targets =
