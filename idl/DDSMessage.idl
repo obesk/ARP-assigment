@@ -26,6 +26,8 @@ union DDSPayload switch (DDSMemorySector) {
 		sequence<DDSVec2D> targets;
 	case OBSTACLES:
 		sequence<DDSVec2D> obstacles;
+	case SCORE:
+		long score;
 };
 
 struct DDSMessage {
