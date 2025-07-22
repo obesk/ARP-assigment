@@ -115,13 +115,14 @@ int loadJSONConfig(struct Config *const c) {
 	log_message(LOG_INFO, "Opened file");
 
 	if (file == NULL) {
-		perror("Error opening the file");
+		log_message(LOG_ERROR, "Error opening the file");
 		return EXIT_FAILURE;
 	}
 
 	int len = fread(jsonBuffer, 1, sizeof(jsonBuffer), file);
 	if (!len) {
-		perror("Error reading file");
+		log_message(LOG_ERROR, "Error reading the file");
+		return EXIT_FAILURE;
 	}
 	log_message(LOG_INFO, "Read file");
 
@@ -129,7 +130,7 @@ int loadJSONConfig(struct Config *const c) {
 	log_message(LOG_INFO, "Parsed json");
 
 	if (json == NULL) {
-		perror("Error parsing the file");
+		log_message(LOG_ERROR, "Error parsing the file");
 		return EXIT_FAILURE;
 	}
 
